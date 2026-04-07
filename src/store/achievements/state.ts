@@ -27,7 +27,11 @@ export const defaultState = (): AchievementsState => {
       uptimeSessionStartMs: null,
       totalPrintWeightGrams: 0,
       klipperRestarts: 0,
-      saveConfigCount: 0
+      saveConfigCount: 0,
+      lastUserInteractionMs: 0,
+      konamiIndex: 0,
+      tempPrecisionStableSinceMs: null,
+      sawHotBedThisPrint: false
     },
     totalPoints: 0,
     enabled: true,

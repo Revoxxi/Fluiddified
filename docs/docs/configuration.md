@@ -5,7 +5,7 @@ icon: lucide/settings
 
 # Configuration
 
-Because Fluidd relies on Moonraker and Klipper, configuration needs to happen
+Because Fluiddified relies on Moonraker and Klipper, configuration needs to happen
 in more than one location.
 
 !!! tip "Installed via KIAUH or another automated tool?"
@@ -21,23 +21,23 @@ in more than one location.
        are not using fluidd-config
     3. **[Moonraker](#moonraker)** — API configuration
     4. Refer to [Common Configuration Issues](#common-configuration-issues)
-       if Fluidd shows warnings or won't connect
+       if Fluiddified shows warnings or won't connect
 
 ## Initial Setup
 
-Fluidd requires some basic configuration to be applied in order to function
-correctly. Fluidd will warn you on startup if required sections are missing.
+Fluiddified requires some basic configuration to be applied in order to function
+correctly. The UI will warn you on startup if required sections are missing.
 
 ## Fluidd Config (recommended)
 
-The easiest way to set up Klipper for Fluidd is to use
+The easiest way to set up Klipper for Fluiddified is to use
 [fluidd-config](https://github.com/fluidd-core/fluidd-config) — a maintained
-set of base macros and settings provided by the Fluidd team. It includes all
+set of base macros and settings provided by the upstream Fluidd / fluidd-config maintainers. It includes all
 required Klipper sections and enhanced macros in a single include file.
 
 ### Installation
 
-If you installed Fluidd via [KIAUH](/getting-started#kiauh), you can install
+If you used [KIAUH](/getting-started#kiauh) for Klipper/Moonraker, you can install
 fluidd-config directly from the KIAUH menu — no manual cloning needed.
 
 For manual installations, clone the repository and create a symlink:
@@ -83,9 +83,9 @@ capabilities:
 - Safer toolhead movement commands via `_CLIENT_LINEAR_MOVE`
 - Support for printers without extruders (e.g. CNC machines)
 
-### Fluidd UI Integration
+### Web UI integration
 
-When fluidd-config is installed, Fluidd automatically detects its macros and
+When fluidd-config is installed, Fluiddified automatically detects its macros and
 enables additional UI features:
 
 - **Pause at layer** — the `SET_PAUSE_NEXT_LAYER` and `SET_PAUSE_AT_LAYER`
@@ -107,19 +107,19 @@ for all available options.
 ## Klipper (manual configuration)
 
 If you prefer to configure Klipper manually instead of using fluidd-config,
-the following sections must be present in your `printer.cfg` for Fluidd to
+the following sections must be present in your `printer.cfg` for Fluiddified to
 function correctly.
 
 For more detailed instructions, please refer to the [Klipper documentation](https://www.klipper3d.org/Config_Reference.html).
 
 ### [virtual_sdcard]
 
-Fluidd requires `virtual_sdcard` to upload, browse, and print G-code files.
-Without this, Fluidd cannot manage files on your printer.
+Fluiddified requires `virtual_sdcard` to upload, browse, and print G-code files.
+Without this, Fluiddified cannot manage files on your printer.
 See the [Klipper `[virtual_sdcard]` reference](https://www.klipper3d.org/Config_Reference.html#virtual_sdcard).
 
 !!! warning "G-code path not found"
-    If you get a G-code path not found error in Fluidd, check that
+    If you get a G-code path not found error in Fluiddified, check that
     `[virtual_sdcard]` is configured correctly — this is the most common
     cause.
 
@@ -130,7 +130,7 @@ path: ~/printer_data/gcodes
 
 ### [display_status]
 
-Required for Fluidd to show print progress percentages and M117 display
+Required for Fluiddified to show print progress percentages and M117 display
 messages. No additional configuration is needed.
 See the [Klipper `[display_status]` reference](https://www.klipper3d.org/Config_Reference.html#display_status).
 
@@ -140,8 +140,8 @@ See the [Klipper `[display_status]` reference](https://www.klipper3d.org/Config_
 
 ### [pause_resume]
 
-Enables the Pause, Resume, and Cancel buttons in Fluidd's print controls.
-Without this, Fluidd cannot pause or cancel a running print. No additional
+Enables the Pause, Resume, and Cancel buttons in Fluiddified's print controls.
+Without this, Fluiddified cannot pause or cancel a running print. No additional
 configuration is needed.
 See the [Klipper `[pause_resume]` reference](https://www.klipper3d.org/Config_Reference.html#pause_resume).
 
@@ -238,7 +238,7 @@ gcode:
 
 ## Moonraker
 
-Moonraker is the API that Fluidd communicates with, which in turn communicates
+Moonraker is the API that Fluiddified communicates with, which in turn communicates
 with Klipper. All three components are required for a healthy printer.
 
 For the full configuration reference, see the
@@ -314,7 +314,7 @@ See the [feature docs](/features/printing#print-history) for more details, and t
 
 !!! tip "Backup & Restore"
     You can back up and restore the Moonraker database from the
-    [System page](/features/system-and-notifications). This preserves Fluidd settings, print
+    [System page](/features/system-and-notifications). This preserves Fluiddified UI settings, print
     history, and other Moonraker data.
 
 ### [octoprint_compat]
@@ -327,8 +327,8 @@ and the [configuration example](#example-configuration).
 
 ### [announcements]
 
-Enables Moonraker announcements for Fluidd, so that important messages from
-the developers and maintainers are shown in the Fluidd notifications panel.
+Enables Moonraker announcements (for example the `fluidd` feed), so that important messages from
+the developers and maintainers are shown in the Fluiddified notifications panel.
 See the [Moonraker `[announcements]` reference](https://moonraker.readthedocs.io/en/latest/configuration/#announcements).
 
 ```ini title="moonraker.conf"
@@ -340,7 +340,7 @@ subscriptions:
 ### [analysis]
 
 Enables G-code print time estimation using Moonraker's built-in estimator.
-When enabled, Fluidd shows a "Perform Time Analysis" action in the file
+When enabled, Fluiddified shows a "Perform Time Analysis" action in the file
 browser — available for single files via context menu or in bulk. Results are
 stored in file metadata and update the estimated print time displayed in the
 file list.
@@ -348,7 +348,7 @@ See the [Moonraker `[analysis]` reference](https://moonraker.readthedocs.io/en/l
 
 ### [job_queue]
 
-Enables the job queue feature. When enabled, Fluidd shows a job queue card on
+Enables the job queue feature. When enabled, Fluiddified shows a job queue card on
 the dashboard, a queue tab on the Jobs page, and "Add to queue" actions in the
 file browser context menu and bulk actions toolbar.
 See the [job queue feature docs](/features/job-queue) and the
@@ -429,7 +429,7 @@ path: ~/fluiddified
 
 ## Multiple Printers
 
-Fluidd allows you to connect to multiple printers from a single host.
+Fluiddified allows you to connect to multiple printers from a single host.
 Your moonraker configuration for each printer you wish to connect to
 may require specific setup in order for this configuration to work.
 
@@ -440,14 +440,14 @@ Reading through the documentation surrounding `cors_domains` in the
 
 ### Example
 
-Assuming you have a single host setup with Fluidd, by way of a
+Assuming you have a single host setup with Fluiddified, by way of a
 [docker installation](/getting-started#docker) or
 [KIAUH installation](/getting-started#kiauh);
 
-1. Note the URL you use to access Fluidd
-   - For this example, let's assume you access Fluidd on `http://fluidd.local`
+1. Note the URL you use to access Fluiddified
+   - For this example, let's assume you access Fluiddified on `http://fluiddified.local`
 
-2. On your fluidd host, when adding a new printer URL — add the full address
+2. On your Fluiddified host, when adding a new printer URL — add the full address
    to your printer E.g., `http://myprinter.local`.
 
 3. If step #2 fails
@@ -461,9 +461,9 @@ many common network setups (adjust `cors_domains` to match your Fluiddified URL)
 
 ### Troubleshooting
 
-If you're entering a printer URL into the add printer dialog but Fluidd won't let you save:
+If you're entering a printer URL into the add printer dialog but Fluiddified won't let you save:
 
-Fluidd won't let you save a new printer if it can't confirm moonraker is running. To
+Fluiddified won't let you save a new printer if it can't confirm moonraker is running. To
 confirm a moonraker printer instance, try browsing directly to the moonraker API;
 
 ```text
@@ -477,15 +477,15 @@ Be sure to replace `myprinter.local` with the host you're trying to connect to.
 If neither of the above url examples work, then moonraker is incorrectly configured
 on your printer.
 
-If they do return a valid response, but fluidd still won't allow you to save,
+If they do return a valid response, but Fluiddified still won't allow you to save,
 then refer to the above configuration example to ensure moonraker is configured
-to accept connections from your fluidd host.
+to accept connections from your Fluiddified host.
 
 ## Common Configuration Issues
 
-### Fluidd shows a configuration warning
+### Fluiddified shows a configuration warning
 
-Fluidd checks for required sections in `printer.cfg` and warns if any are
+Fluiddified checks for required sections in `printer.cfg` and warns if any are
 missing. Common warnings include:
 
 - `[virtual_sdcard] not found in printer configuration.`
@@ -503,6 +503,6 @@ Also verify file system permissions on the config directory.
 
 ### CORS errors in the browser console
 
-Your browser is blocking cross-origin requests. Add your Fluidd URL to
+Your browser is blocking cross-origin requests. Add your Fluiddified URL to
 `cors_domains` in `moonraker.conf`. See [CORS Domains](#cors-domains) above
 and the [example configuration](#example-configuration).

@@ -4,7 +4,7 @@ title: File Manager
 
 # File Manager
 
-Fluidd's file manager provides access to all printer files organized by root
+Fluiddified's file manager provides access to all printer files organized by root
 location. Browse, upload, edit, and manage G-code files, configuration,
 logs, and more — all from your browser.
 
@@ -37,7 +37,7 @@ menu (right-click) or toolbar:
 - Create new files and folders
 - Create ZIP archives from single or multiple items
 
-When opening G-code preview for very large files (over 100 MB), Fluidd
+When opening G-code preview for very large files (over 100 MB), Fluiddified
 prompts for confirmation before loading.
 
 !!! tip "Large files"

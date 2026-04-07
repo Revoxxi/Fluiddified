@@ -110,6 +110,31 @@ function isMajorHoliday (tsSec: number): boolean {
   return false
 }
 
+/** Print spans local 11:00 PM through 6:00 AM the next calendar day */
+function coversGraveyardWindow (startSec: number, endSec: number): boolean {
+  const s = new Date(startSec * 1000)
+  const y = s.getFullYear()
+  const m = s.getMonth()
+  const d = s.getDate()
+  const slotStart = new Date(y, m, d, 23, 0, 0).getTime() / 1000
+  const slotEnd = new Date(y, m, d + 1, 6, 0, 0).getTime() / 1000
+  if (startSec <= slotStart && endSec >= slotEnd) return true
+  const prevStart = new Date(y, m, d - 1, 23, 0, 0).getTime() / 1000
+  const prevEnd = new Date(y, m, d, 6, 0, 0).getTime() / 1000
+  return startSec <= prevStart && endSec >= prevEnd
+}
+
+const KONAMI_EXPECTED = [
+  'ArrowUp', 'ArrowUp', 'ArrowDown', 'ArrowDown',
+  'ArrowLeft', 'ArrowRight', 'ArrowLeft', 'ArrowRight', 'b', 'a'
+] as const
+
+function normalizeKonamiKey (key: string): string {
+  return key.length === 1 ? key.toLowerCase() : key
+}
+
+type HeaterForAchievement = { type: string, temperature: number, target: number }
+
 export const actions = {
   async reset ({ commit }) {
     commit('setReset')
@@ -428,6 +453,14 @@ export const actions = {
       }
     }
 
+    if (isCompleted && totals?.total_jobs === 7 && Math.round(duration) === 420) {
+      await dispatch('unlockAchievement', { id: 'lucky_seven' })
+    }
+
+    if (isCompleted && startTime > 0 && endTime > 0 && coversGraveyardWindow(startTime, endTime)) {
+      await dispatch('unlockAchievement', { id: 'night_shift' })
+    }
+
     if (isCompleted && endTime > 0) {
       const wk = getWeekAnchorDateKey(endTime)
       if (!state.stats.weeksWithPrint.includes(wk)) {
@@ -453,6 +486,22 @@ export const actions = {
     const holidayTs = endTime > 0 ? endTime : startTime
     if (isCompleted && holidayTs > 0 && isMajorHoliday(holidayTs)) {
       await dispatch('unlockAchievement', { id: 'holiday_printer' })
+    }
+
+    if (isCompleted) {
+      const heaters = rootGetters['printer/getHeaters'] as HeaterForAchievement[]
+      const bed = heaters.find(h => h.type === 'heater_bed')
+      if (
+        bed != null &&
+        bed.temperature < 30 &&
+        state.stats.sawHotBedThisPrint
+      ) {
+        await dispatch('unlockAchievement', { id: 'cool_down_patience' })
+      }
+    }
+
+    if (isCompleted || isFailed) {
+      commit('updateStat', { key: 'sawHotBedThisPrint', value: false })
     }
 
     await dispatch('recomputeUptimeAchievement')
@@ -683,6 +732,129 @@ export const actions = {
     await dispatch('unlockAchievement', { id: 'emergency_stop' })
   },
 
+  /** Dashboard at local 3:14 PM */
+  async onDashboardClockEgg ({ state, dispatch }) {
+    if (!state.enabled) return
+    const d = new Date()
+    if (d.getHours() === 15 && d.getMinutes() === 14) {
+      await dispatch('unlockAchievement', { id: 'easter_egg_time' })
+    }
+  },
+
+  async onKonamiKey ({ state, commit, dispatch }, key: string) {
+    if (!state.enabled) return
+    const k = normalizeKonamiKey(key)
+    let idx = state.stats.konamiIndex
+    const expected = KONAMI_EXPECTED[idx]
+    const expN = normalizeKonamiKey(expected)
+    if (k === expN) {
+      idx += 1
+      if (idx >= KONAMI_EXPECTED.length) {
+        await dispatch('unlockAchievement', { id: 'konami' })
+        idx = 0
+      }
+      commit('updateStat', { key: 'konamiIndex', value: idx })
+    } else {
+      const first = normalizeKonamiKey(KONAMI_EXPECTED[0])
+      idx = k === first ? 1 : 0
+      commit('updateStat', { key: 'konamiIndex', value: idx })
+    }
+  },
+
+  async onUserInteraction ({ state, commit }) {
+    if (!state.enabled) return
+    commit('updateStat', { key: 'lastUserInteractionMs', value: Date.now() })
+  },
+
+  async onPrintWatchBaseline ({ state, commit, dispatch }) {
+    if (!state.enabled) return
+    commit('updateStat', { key: 'lastUserInteractionMs', value: Date.now() })
+    commit('updateStat', { key: 'sawHotBedThisPrint', value: false })
+    await dispatch('saveToDb')
+  },
+
+  async onPeriodicThermalAndPatience ({ state, commit, dispatch, rootGetters }) {
+    if (!state.enabled) return
+    const printerState: string = rootGetters['printer/getPrinterState']
+    const printing = printerState === 'printing'
+    if (printing && state.stats.lastUserInteractionMs > 0) {
+      if (Date.now() - state.stats.lastUserInteractionMs >= 30 * 60 * 1000) {
+        await dispatch('unlockAchievement', { id: 'patience' })
+      }
+    }
+
+    if (!rootGetters['printer/getKlippyReady']) return
+
+    const heaters = rootGetters['printer/getHeaters'] as HeaterForAchievement[]
+
+    if (printing) {
+      const bed = heaters.find(h => h.type === 'heater_bed')
+      if (bed != null && bed.temperature > 80) {
+        if (!state.stats.sawHotBedThisPrint) {
+          commit('updateStat', { key: 'sawHotBedThisPrint', value: true })
+        }
+      }
+    }
+
+    for (const h of heaters) {
+      if (h.type === 'extruder' && h.temperature > 280) {
+        await dispatch('unlockAchievement', { id: 'high_temp' })
+        break
+      }
+    }
+
+    for (const h of heaters) {
+      if (h.type === 'heater_bed' && h.temperature > 100) {
+        await dispatch('unlockAchievement', { id: 'abs_warrior' })
+        break
+      }
+    }
+
+    const atTargetCount = heaters.filter(h =>
+      h.target > 0 && Math.abs(h.temperature - h.target) <= 2.5
+    ).length
+    if (atTargetCount >= 3) {
+      await dispatch('unlockAchievement', { id: 'all_heaters_on' })
+    }
+
+    let stableHeater = false
+    for (const h of heaters) {
+      if (h.target > 0 && Math.abs(h.temperature - h.target) <= 0.5) {
+        stableHeater = true
+        break
+      }
+    }
+    if (stableHeater) {
+      if (state.stats.tempPrecisionStableSinceMs == null) {
+        commit('updateStat', { key: 'tempPrecisionStableSinceMs', value: Date.now() })
+      } else if (
+        state.stats.tempPrecisionStableSinceMs > 0 &&
+        Date.now() - state.stats.tempPrecisionStableSinceMs >= 10 * 60 * 1000
+      ) {
+        await dispatch('unlockAchievement', { id: 'temp_precision' })
+      }
+    } else if (state.stats.tempPrecisionStableSinceMs != null) {
+      commit('updateStat', { key: 'tempPrecisionStableSinceMs', value: null })
+    }
+  },
+
+  async onScrollAchievementsListEnd ({ state, dispatch }) {
+    if (!state.enabled) return
+    await dispatch('unlockAchievement', { id: 'scroll_to_bottom' })
+  },
+
+  async onHeaterTargetForAchievement ({ state, dispatch }, payload: { target: number }) {
+    if (!state.enabled) return
+    if (payload.target === 42) {
+      await dispatch('unlockAchievement', { id: 'temp_42' })
+    }
+  },
+
+  async onFileOrganizerFolderCreated ({ state, dispatch }) {
+    if (!state.enabled) return
+    await dispatch('unlockAchievement', { id: 'file_organizer' })
+  },
+
   async onCameraView ({ state, commit, dispatch }, cameraId: string) {
     if (!state.enabled) return
 
@@ -780,6 +952,28 @@ export const actions = {
     const rateAll = computeSuccessRatePercent(jobs as Array<{ status: string }>)
     if (rateAll != null) {
       await dispatch('unlockAchievement', { id: 'success_rate', value: rateAll })
+    }
+
+    const sortedByEnd = [...completedJobs].sort((a, b) => {
+      const ea = a.end_time != null ? (typeof a.end_time === 'string' ? parseFloat(a.end_time) : a.end_time) : 0
+      const eb = b.end_time != null ? (typeof b.end_time === 'string' ? parseFloat(b.end_time) : b.end_time) : 0
+      return ea - eb
+    })
+    const seventh = sortedByEnd[6]
+    if (seventh && Math.round(seventh.print_duration ?? 0) === 420) {
+      await dispatch('unlockAchievement', { id: 'lucky_seven' })
+    }
+
+    for (const job of completedJobs) {
+      const st = job.start_time ?? 0
+      let et = 0
+      if (job.end_time != null) {
+        et = typeof job.end_time === 'string' ? parseFloat(job.end_time) : job.end_time
+      }
+      if (st > 0 && et > 0 && coversGraveyardWindow(st, et)) {
+        await dispatch('unlockAchievement', { id: 'night_shift' })
+        break
+      }
     }
 
     for (const job of completedJobs) {

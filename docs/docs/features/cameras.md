@@ -4,7 +4,7 @@ title: Cameras
 
 # Cameras
 
-Fluidd offers robust support for displaying camera streams, providing users
+Fluiddified offers robust support for displaying camera streams, providing users
 with real-time monitoring capabilities for their 3D printing projects.
 
 The current supported types are:
@@ -62,14 +62,14 @@ can be configured individually with:
 ## Camera streamers
 
 You will need a camera streaming service running alongside Klipper to serve
-the video feed. Fluidd does not capture video itself — it only displays
+the video feed. Fluiddified does not capture video itself — it only displays
 streams provided by external services.
 
 ### Crowsnest
 
 [Crowsnest](https://crowsnest.mainsail.xyz/) is the recommended camera
 streamer for Klipper setups. It supports a wide range of USB and CSI cameras
-and integrates with Fluidd out of the box. See the
+and integrates with Fluiddified out of the box. See the
 [Crowsnest documentation](https://crowsnest.mainsail.xyz/) for installation
 and configuration.
 
@@ -91,7 +91,7 @@ Refer to each project's documentation for setup instructions.
 - Verify your camera streamer is running. Try opening the stream URL directly
   in a browser tab — if the page does not load, the streamer is not
   reachable.
-- Check that the URL in Fluidd's camera settings matches the streamer's
+- Check that the URL in Fluiddified's camera settings matches the streamer's
   configured address and port.
 - If using MJPEG with Crowsnest, confirm Crowsnest is active by checking the
   service status on the [System page](/features/system-and-notifications).

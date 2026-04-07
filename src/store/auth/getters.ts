@@ -19,14 +19,13 @@ export const getters = {
   },
 
   getCurrentRole: (state, getters): Role => {
-    // RBAC follows the logged-in Moonraker user (JWT + Fluidd role map).
-    if (state.token && state.currentUser?.username) {
-      return getters.getRoleForUser(state.currentUser.username)
+    // RBAC follows a real JWT session only. Moonraker may accept API keys or trusted
+    // clients for HTTP/WS, and the app may still receive `currentUser` from the socket —
+    // that must not grant Fluidd owner/user without `token` + `authenticated`.
+    if (!state.token || !state.authenticated || !state.currentUser?.username) {
+      return 'guest'
     }
-    if (state.currentUser?.username) {
-      return getters.getRoleForUser(state.currentUser.username)
-    }
-    return 'guest'
+    return getters.getRoleForUser(state.currentUser.username)
   },
 
   hasPermission: (_state, getters) => (permission: Permission): boolean => {

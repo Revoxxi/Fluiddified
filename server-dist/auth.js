@@ -3,22 +3,26 @@ import { hasMinRole } from './roles';
 import { resolveProxyBackend } from './instanceRouting';
 const roleCache = new Map();
 const ROLE_CACHE_TTL = 30_000;
-export async function fetchRoles(host, port) {
-    const key = `${host}:${port}`;
+export async function fetchRoles(host, port, moonrakerApiKey) {
+    const cacheKey = `${host}:${port}:${moonrakerApiKey ? '1' : '0'}`;
     const now = Date.now();
-    const cached = roleCache.get(key);
+    const cached = roleCache.get(cacheKey);
     if (cached && now - cached.time < ROLE_CACHE_TTL) {
         return cached.roles;
     }
     try {
-        const res = await fetch(`http://${host}:${port}/server/database/item?namespace=fluidd&key=auth`);
+        const headers = {};
+        if (moonrakerApiKey) {
+            headers['X-Api-Key'] = moonrakerApiKey;
+        }
+        const res = await fetch(`http://${host}:${port}/server/database/item?namespace=fluidd&key=auth`, { headers });
         const data = await res.json();
         const roles = data.result?.value?.roles ?? {};
-        roleCache.set(key, { roles, time: now });
+        roleCache.set(cacheKey, { roles, time: now });
         return roles;
     }
     catch {
-        console.warn(`[auth] Could not fetch roles from Moonraker DB at ${key}`);
+        console.warn(`[auth] Could not fetch roles from Moonraker DB at ${host}:${port}`);
         return {};
     }
 }
@@ -68,7 +72,7 @@ export function authHook(config) {
             }
             req.jwtUser = decoded;
             const b = req.proxyBackend;
-            const roles = await fetchRoles(b.moonrakerHost, b.moonrakerPort);
+            const roles = await fetchRoles(b.moonrakerHost, b.moonrakerPort, b.moonrakerApiKey);
             req.userRole = roles[decoded.username] ?? 'user';
         }
         catch {

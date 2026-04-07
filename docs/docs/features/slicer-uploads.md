@@ -46,7 +46,7 @@ your printer.
 7. Click **Test** to verify the connection.
 
 ![PrusaSlicer physical printer configuration with connection details](/assets/images/physical-printer.png)
-![Slicer upload confirmation showing the file being sent to Fluidd](/assets/images/slicer-upload.png)
+![Slicer upload confirmation showing the file being sent to Fluiddified](/assets/images/slicer-upload.png)
 
 ## Cura
 
@@ -82,4 +82,4 @@ work. If your slicer rejects the key, ensure the field is not blank.
 
 Check whether your slicer's "start print after upload" option is enabled. If
 it is disabled, the file will be uploaded but you will need to start the print
-manually from Fluidd.
+manually from Fluiddified.

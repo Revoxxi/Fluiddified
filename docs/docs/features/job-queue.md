@@ -4,7 +4,7 @@ title: Job Queue
 
 # Job Queue
 
-Fluidd's job queue lets you line up multiple G-code files for sequential
+Fluiddified's job queue lets you line up multiple G-code files for sequential
 printing. Jobs are processed in order — when one print finishes, the next
 one starts automatically (if configured) or waits for you to resume.
 
@@ -21,7 +21,7 @@ complete example.
     configure `automatic_transition` in Moonraker. See
     [Advanced settings](#advanced-settings).
 
-Once enabled, Fluidd shows a job queue card on the dashboard and a queue tab
+Once enabled, Fluiddified shows a job queue card on the dashboard and a queue tab
 on the Jobs page.
 
 ## Adding jobs
@@ -85,7 +85,7 @@ The queue footer displays aggregated information across all queued jobs:
   any print currently in progress
 
 !!! warning "Missing metadata"
-    If a queued file has been deleted from disk or lacks metadata, Fluidd
+    If a queued file has been deleted from disk or lacks metadata, Fluiddified
     shows a warning icon. The job remains in the queue but cannot contribute
     to totals or be reordered.
 

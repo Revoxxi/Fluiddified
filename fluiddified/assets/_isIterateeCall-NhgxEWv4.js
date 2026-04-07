@@ -1,1 +1,0 @@
-import{r as e,t}from"./eq-Jr2DG2-l.js";import{r as n,t as r}from"./isArrayLike-DEUxufGC.js";function i(i,a,o){if(!e(o))return!1;var s=typeof a;return(s==`number`?r(o)&&n(a,o.length):s==`string`&&a in o)?t(o[a],i):!1}export{i as t};

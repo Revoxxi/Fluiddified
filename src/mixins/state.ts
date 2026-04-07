@@ -173,6 +173,8 @@ RESTORE_GCODE_STATE NAME=_ui_retract`
 
     if (result) {
       SocketActions.printerEmergencyStop()
+      Promise.resolve(this.$typedDispatch('achievements/onEmergencyStop', undefined, { root: true }))
+        .catch(() => undefined)
     }
   }
 

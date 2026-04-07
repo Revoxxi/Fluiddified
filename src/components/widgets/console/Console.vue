@@ -175,6 +175,8 @@ export default class Console extends Mixins(StateMixin) {
       // If clients detect M112 input from the console, we should invoke the emergency_stop endpoint
       if (command.trim().toLowerCase() === 'm112') {
         SocketActions.printerEmergencyStop()
+        Promise.resolve(this.$typedDispatch('achievements/onEmergencyStop', undefined, { root: true }))
+          .catch(() => undefined)
       }
       this.sendGcode(command)
       this.currentCommand = ''

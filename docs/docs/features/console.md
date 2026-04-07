@@ -4,7 +4,7 @@ title: Console
 
 # Console
 
-Fluidd's console lets you send G-code commands to Klipper and view responses
+Fluiddified's console lets you send G-code commands to Klipper and view responses
 in real time. A compact console card is available on the dashboard, and a
 dedicated fullscreen console page is accessible from the navigation menu.
 
@@ -46,4 +46,4 @@ Configure custom filters in Console Settings to hide unwanted messages:
 The console input position can be flipped between top and bottom in the
 console settings. Choose whichever feels more natural for your workflow.
 
-![Fluidd console showing command history and a text input with autocomplete](/assets/images/console.png)
+![Fluiddified console showing command history and a text input with autocomplete](/assets/images/console.png)

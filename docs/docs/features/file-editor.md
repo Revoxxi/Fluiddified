@@ -4,7 +4,7 @@ title: File Editor
 
 # File Editor
 
-Fluidd includes a built-in code editor powered by Monaco (the engine behind
+Fluiddified includes a built-in code editor powered by Monaco (the engine behind
 VS Code) for editing Klipper configuration files, G-code, and other files
 directly from your browser.
 

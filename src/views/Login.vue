@@ -9,12 +9,12 @@
       cols="12"
       class="d-flex justify-center align-center py-2 py-md-6"
     >
-      <v-card
-        class="login-panel"
-        :elevation="12"
-        width="100%"
-        :max-width="loginPanelMaxWidth"
-      >
+      <div class="login-panel-shell">
+        <v-card
+          class="login-panel"
+          :elevation="12"
+          width="100%"
+        >
         <div
           v-if="firstUserUi === 'loading'"
           class="text-center py-12 px-6"
@@ -215,7 +215,8 @@
             </v-form>
           </template>
         </v-card-text>
-      </v-card>
+        </v-card>
+      </div>
     </v-col>
   </v-row>
 </template>
@@ -235,8 +236,6 @@ import { Icons } from '@/globals'
 export default class Login extends VueBase {
   readonly notSetupIcon = Icons.alertCircle
 
-  /** Card width cap; comfortable reading line length on large screens. */
-  readonly loginPanelMaxWidth = 440
   username = ''
   password = ''
   passwordConfirm = ''
@@ -363,6 +362,15 @@ export default class Login extends VueBase {
   .login-view {
     // Align with Globals.HEADER_HEIGHT (app bar)
     min-height: calc(100vh - 56px);
+  }
+
+  /* Hard cap: v-card max-width is unreliable inside flex v-col with width="100%". */
+  .login-panel-shell {
+    width: 100%;
+    max-width: 400px;
+    margin-left: auto;
+    margin-right: auto;
+    flex: 0 1 auto;
   }
 
   .login-panel {

@@ -419,10 +419,20 @@ export default class TemperatureTargets extends Mixins(StateMixin) {
 
   setHeaterTargetTemp (heater: string, target: number) {
     this.sendGcode(`SET_HEATER_TEMPERATURE HEATER=${encodeGcodeParamValue(heater)} TARGET=${target}`)
+    const rounded = Math.round(target)
+    if (rounded === 42) {
+      Promise.resolve(this.$typedDispatch('achievements/onHeaterTargetForAchievement', { target: rounded }, { root: true }))
+        .catch(() => undefined)
+    }
   }
 
   setFanTargetTemp (fan: string, target: number) {
     this.sendGcode(`SET_TEMPERATURE_FAN_TARGET TEMPERATURE_FAN=${encodeGcodeParamValue(fan)} TARGET=${target}`)
+    const rounded = Math.round(target)
+    if (rounded === 42) {
+      Promise.resolve(this.$typedDispatch('achievements/onHeaterTargetForAchievement', { target: rounded }, { root: true }))
+        .catch(() => undefined)
+    }
   }
 
   getRateOfChange (item: Heater | Sensor) {

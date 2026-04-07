@@ -4,7 +4,7 @@ title: Authorization
 
 # Authorization
 
-Fluidd supports JWT authorization through Moonraker's authentication endpoints.
+Fluiddified supports JWT authorization through Moonraker's authentication endpoints.
 
 ## API Keys
 
@@ -17,7 +17,7 @@ Moonraker stores API keys in its internal database. To retrieve your API key:
 
 If authorization is not yet enabled:
 
-1. Open Fluidd and go to **Settings → Authorization**
+1. Open Fluiddified and go to **Settings → Authorization**
 2. Click **Add User** and create your first user account with a username and password
 3. Once a user exists, login is required when `force_logins: true` is set in
    `moonraker.conf`, or when the connecting client is not in `trusted_clients`.
@@ -50,12 +50,12 @@ by editing your `moonraker.conf` and turning `force_logins` to `false`.
 
 ## LDAP Configuration
 
-Fluidd supports LDAP authentication through Moonraker's `[ldap]` component,
+Fluiddified supports LDAP authentication through Moonraker's `[ldap]` component,
 enabling centralized login with Active Directory or any LDAP-compatible server.
 For the full configuration reference, see the
 [Moonraker LDAP documentation](https://moonraker.readthedocs.io/en/latest/configuration/#ldap).
 
-Two Fluidd-specific steps after configuring `[ldap]` in Moonraker:
+Two Fluiddified-specific steps after configuring `[ldap]` in Moonraker:
 
 - Remove `trusted_clients:` from `[authorization]` to require authentication
   from all clients, including local ones.

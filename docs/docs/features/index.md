@@ -5,16 +5,16 @@ icon: lucide/sparkles
 
 # Features
 
-Fluidd is packed with features to help you monitor, control, and manage your
-3D printer. Here's an overview of what's available.
+**Fluiddified** is packed with features to help you monitor, control, and manage your
+3D printer — inherited from [Fluidd](https://github.com/fluidd-core/fluidd) with fork-specific additions. Here's an overview of what's available.
 
-## Fluiddified (fork)
+## Fluiddified-only features
 
-If you use **[Fluiddified](/features/fluiddified)** — a fork of Fluidd — see
-that page for plugin manifests, roles (owner / user / guest), achievements, and
+See **[Fluiddified](/features/fluiddified)** for plugin manifests, roles (owner / user / guest), achievements, and
 the optional built-in proxy. For authoring custom dashboard widgets (catalog
 URL or ZIP install), see **[Plugin development](/features/plugin-development)**.
-The sections below describe the shared Fluidd UI and Moonraker integration.
+
+The sections below describe the web UI and Moonraker integration (shared lineage with upstream Fluidd).
 
 ## Printing & Preview
 
@@ -62,13 +62,13 @@ The sections below describe the shared Fluidd UI and Moonraker integration.
   keyboard.
 
 - **[Updates](/features/updates)** — automated updates for Klipper, Moonraker,
-  Fluidd, and other components, with manual update instructions.
+  Fluiddified, and other components, with manual update instructions.
 - **[System & Notifications](/features/system-and-notifications)** — host information, service
   management, database backup, and alerts for throttling and pending updates.
 - **[Authorization](/features/authorization)** — JWT authentication with
   support for forced logins and LDAP.
 - **[Multiple Printers](/features/multiple-printers)** — connect and switch
-  between multiple printers from a single Fluidd instance.
+  between multiple printers from a single Fluiddified instance.
 - **[Timelapse](/features/timelapse)** — browse, download, and manage timelapse
   recordings via Moonraker's timelapse component.
 - **[Localization](/features/localization)** — available in multiple languages

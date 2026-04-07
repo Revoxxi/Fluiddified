@@ -116,13 +116,15 @@ export const actions = {
     }
   },
 
-  async notifyCreateDir ({ commit }, payload: Moonraker.Files.ChangeResponse) {
+  async notifyCreateDir ({ commit, dispatch }, payload: Moonraker.Files.ChangeResponse) {
     const paths = getFilePaths(payload.item.path, payload.item.root)
 
     if (!paths.filtered) {
       const dir = itemAsMoonrakerDir(payload.item, paths)
 
       commit('setDirUpdate', { paths, dir })
+      Promise.resolve(dispatch('achievements/onFileOrganizerFolderCreated', undefined, { root: true }))
+        .catch(() => undefined)
     }
   },
 

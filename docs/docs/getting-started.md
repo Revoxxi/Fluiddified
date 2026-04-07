@@ -5,7 +5,7 @@ icon: lucide/rocket
 
 # Getting Started
 
-Fluidd requires three components to run:
+You need three components to run the full stack:
 
 - **[Klipper](https://www.klipper3d.org/)** — the printer firmware
 - **[Moonraker](https://moonraker.readthedocs.io/)** — the API server that
@@ -63,10 +63,11 @@ so Moonraker allows your browser to call the API. See the
 !!! warning "FluiddPI is not recommended"
     FluiddPI is not under active maintenance and we've had reports from users
     finding issues while using it. We recommend using [KIAUH](#kiauh) to
-    install Fluidd instead.
+    install Klipper, Moonraker, and **Fluiddified** instead.
 
 FluiddPI is a Raspberry Pi OS Lite image pre-configured with Klipper,
-Moonraker, and Fluidd.
+Moonraker, and upstream **Fluidd** (not Fluiddified). To use Fluiddified on a Pi,
+prefer KIAUH or a manual install from [this project's releases](https://github.com/revoxxi/fluiddified/releases).
 
 [View on GitHub](https://github.com/fluidd-core/FluiddPi){.md-button}
 
@@ -95,5 +96,5 @@ For Linux/macOS: [Raspberry Pi Imager](https://www.raspberrypi.org/software/).
    - Default credentials: `pi` / `raspberry`
 4. Run `sudo raspi-config` to change your password, timezone, locale, and
    optionally the hostname.
-5. Access Fluidd at `http://fluiddpi.local` (or `http://yourhostname.local`
-   if you changed the hostname).
+5. Access the web UI at `http://fluiddpi.local` (or `http://yourhostname.local`
+   if you changed the hostname). FluiddPI ships upstream Fluidd; replace it with Fluiddified if you prefer this fork.

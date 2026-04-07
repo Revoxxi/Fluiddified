@@ -239,6 +239,10 @@ router.beforeEach((to, from, next) => {
 router.afterEach((to) => {
   Promise.resolve(store.dispatch('achievements/onNavigate', to.fullPath))
     .catch(() => undefined)
+  if (to.name === 'home') {
+    Promise.resolve(store.dispatch('achievements/onDashboardClockEgg'))
+      .catch(() => undefined)
+  }
 })
 
 declare module 'vue-router' {

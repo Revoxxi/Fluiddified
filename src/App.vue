@@ -169,6 +169,13 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
   dragState = false
   customBackgroundImageStyle: Record<string, string> = {}
 
+  achievementTicker: number | null = null
+
+  achievementIdleListener = () => {
+    Promise.resolve(this.$typedDispatch('achievements/onUserInteraction', undefined, { root: true }))
+      .catch(() => undefined)
+  }
+
   flashMessageState: FlashMessage = {
     open: false,
     text: undefined,
@@ -378,6 +385,14 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
     }
   }
 
+  @Watch('printerPrinting')
+  onPrinterPrintingAchievementBaseline (printing: boolean, prev: boolean) {
+    if (printing && !prev) {
+      Promise.resolve(this.$typedDispatch('achievements/onPrintWatchBaseline', undefined, { root: true }))
+        .catch(() => undefined)
+    }
+  }
+
   mounted () {
     window.addEventListener('dragover', this.handleDragOver)
     window.addEventListener('dragenter', this.handleDragOver)
@@ -414,6 +429,24 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
         }
       })
     }
+
+    Promise.resolve(this.$typedDispatch('achievements/onPageRefresh', undefined, { root: true }))
+      .catch(() => undefined)
+
+    if (this.printerPrinting) {
+      Promise.resolve(this.$typedDispatch('achievements/onPrintWatchBaseline', undefined, { root: true }))
+        .catch(() => undefined)
+    }
+
+    this.achievementTicker = window.setInterval(() => {
+      Promise.resolve(this.$typedDispatch('achievements/onPeriodicThermalAndPatience', undefined, { root: true }))
+        .catch(() => undefined)
+    }, 30000)
+
+    for (const evt of ['pointerdown', 'wheel', 'touchstart'] as const) {
+      document.addEventListener(evt, this.achievementIdleListener, { passive: true, capture: true })
+    }
+    document.addEventListener('keydown', this.achievementIdleListener, { capture: true })
   }
 
   beforeDestroy () {
@@ -422,6 +455,15 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
     window.removeEventListener('dragleave', this.handleDragLeave)
     window.removeEventListener('drop', this.handleDrop)
     window.removeEventListener('keydown', this.handleKeyDown)
+
+    if (this.achievementTicker != null) {
+      window.clearInterval(this.achievementTicker)
+      this.achievementTicker = null
+    }
+    for (const evt of ['pointerdown', 'wheel', 'touchstart'] as const) {
+      document.removeEventListener(evt, this.achievementIdleListener, { capture: true })
+    }
+    document.removeEventListener('keydown', this.achievementIdleListener, { capture: true })
   }
 
   handleToolsDrawerChange () {

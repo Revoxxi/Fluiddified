@@ -15,7 +15,7 @@ firmware.
 [View on GitHub](https://github.com/revoxxi/fluiddified){.md-button}
 [Release Notes](https://github.com/revoxxi/fluiddified/releases){.md-button}
 
-![Fluidd dashboard showing a sliced G-code 3D preview](/assets/images/preview_sliced.png)
+![Fluiddified dashboard showing a sliced G-code 3D preview](/assets/images/preview_sliced.png)
 
 ## Features
 

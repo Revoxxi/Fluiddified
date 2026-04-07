@@ -4,18 +4,18 @@ title: Printing
 
 # Printing
 
-Fluidd provides tools to preview, monitor, and manage your prints — from
+Fluiddified provides tools to preview, monitor, and manage your prints — from
 G-code visualization to thumbnail previews and print history.
 
 ## G-code Viewer
 
-Fluidd's G-code viewer provides a 2D visualization of the currently selected
+Fluiddified's G-code viewer provides a 2D visualization of the currently selected
 layer. It can automatically follow print progress and show information about
 the moves being executed. Multi-tool prints are supported, with each tool
 shown in a distinct color.
 
 Frequently used settings are accessible via the cog icon in the card header.
-Less common options can be found on Fluidd's settings page.
+Less common options can be found on Fluiddified's settings page.
 
 ![G-code 3D preview showing a sliced model with layer visualization](/assets/images/gcode_preview.png)
 ![G-code viewer display options panel with layer and move-type toggles](/assets/images/gcode_display_opts.png)
@@ -63,7 +63,7 @@ For this feature to work, complete the following setup:
 
 ## Thumbnails
 
-Fluidd can display thumbnail previews of your print files. The recommended
+Fluiddified can display thumbnail previews of your print files. The recommended
 sizes are:
 
 - `300x300` — for large previews
@@ -107,7 +107,7 @@ one at `48x48`.
 
 ## Bed Mesh
 
-Fluidd has a built-in bed mesh viewer. Navigate to the printer page and
+Fluiddified has a built-in bed mesh viewer. Navigate to the printer page and
 calibrate a mesh to view it.
 
 You need `[bed_mesh]` configured in Klipper for this option to appear.
@@ -116,7 +116,7 @@ You need `[bed_mesh]` configured in Klipper for this option to appear.
 
 ## Print History
 
-Fluidd integrates with Moonraker's print history component to give you
+Fluiddified integrates with Moonraker's print history component to give you
 insights into past prints.
 
 | Action            | Description                                                           |
@@ -126,7 +126,7 @@ insights into past prints.
 | **Statistics**    | Track total print time and filament usage over time.                  |
 | **Re-print**      | Re-start failed or cancelled jobs directly from the history.          |
 
-Fluidd loads the last 50 prints by default. The full history can hold up to
+Fluiddified loads the last 50 prints by default. The full history can hold up to
 10,000 entries — a dedicated History page is available from the main navigation
 for a full-screen view.
 
@@ -136,7 +136,7 @@ for a full-screen view.
 
 ## Firmware Retraction
 
-Fluidd shows a **Retraction** card on the dashboard when firmware retraction is
+Fluiddified shows a **Retraction** card on the dashboard when firmware retraction is
 configured in Klipper. This lets you adjust retraction settings live during a
 print without re-slicing.
 

@@ -5,12 +5,12 @@ icon: lucide/palette
 
 # Customize
 
-Fluidd allows you to adjust the layout of your dashboard, set a theme color,
+Fluiddified allows you to adjust the layout of your dashboard, set a theme color,
 and control which components are visible.
 
 ## Application Layout
 
-Fluidd's dashboard uses a multi-column layout. On desktop, cards are arranged
+Fluiddified's dashboard uses a multi-column layout. On desktop, cards are arranged
 across left and right columns. On mobile, they collapse into a single column.
 
 To adjust the layout, open the side menu and click **Adjust Layout**:
@@ -28,7 +28,7 @@ To adjust the layout, open the side menu and click **Adjust Layout**:
 
 ### Theme Presets
 
-Fluidd lets you choose a community preset, apply a color of your
+Fluiddified lets you choose a community preset, apply a color of your
 choosing — along with either a dark or light theme.
 
 Community presets are themed around popular 3D printing brands and
@@ -41,7 +41,7 @@ dark and light mode without using a preset.
 
 ### Custom Themes
 
-Fluidd supports custom stylesheets, background images, and logos. All custom
+Fluiddified supports custom stylesheets, background images, and logos. All custom
 theming is configured through a `.fluidd-theme` folder within your printer's
 configuration directory.
 
@@ -58,27 +58,27 @@ Currently, the following file extensions are supported:
 
 #### Custom Logo
 
-To replace the Fluidd logo in the sidebar, upload a `logo.svg` or `logo.png`
+To replace the Fluiddified logo in the sidebar, upload a `logo.svg` or `logo.png`
 file to the `.fluidd-theme` folder in your configuration directory. The logo
-will appear in the application bar after reloading Fluidd.
+will appear in the application bar after reloading Fluiddified.
 
 #### Custom Styling
 
 To apply custom CSS, create a `custom.css` file and upload it to the
-`.fluidd-theme` directory. After reloading Fluidd the changes should become
+`.fluidd-theme` directory. After reloading Fluiddified the changes should become
 visible.
 
 !!! tip "Custom CSS"
-    Custom CSS is applied globally. Fluidd uses Vuetify 2 CSS classes. Use
+    Custom CSS is applied globally. Fluiddified uses Vuetify 2 CSS classes. Use
     your browser's developer tools (++f12++) to inspect element classes before
     writing custom selectors.
 
 ## Hiding Components
 
-Fluidd allows you to hide macros, output pins, fans and sensors by prefixing
+Fluiddified allows you to hide macros, output pins, fans and sensors by prefixing
 them with an underscore (`_`).
 
-By doing this — you're removing them from Fluidd. This can be handy in
+By doing this — you're removing them from Fluiddified. This can be handy in
 situations where you have a large quantity of macros, or whereby you have an
 output pin you may have no need to control in UI.
 
@@ -100,7 +100,7 @@ pin: z:P1.30
 sensor_type: MCU
 ```
 
-Macros can also be hidden directly from the Fluidd settings by toggling their
+Macros can also be hidden directly from the Fluiddified settings by toggling their
 visibility, in order to not change their name. For full macro management
 options including categories and colors, see the [Macros](/features/macros) page.
 

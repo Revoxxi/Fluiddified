@@ -4,7 +4,7 @@ title: Timelapse
 
 # Timelapse
 
-Fluidd integrates with Moonraker's
+Fluiddified integrates with Moonraker's
 [timelapse](https://github.com/mainsail-crew/moonraker-timelapse) component,
 providing a dedicated view for managing timelapse recordings.
 
@@ -70,7 +70,7 @@ frame:
 The Timelapse page only appears when the Moonraker timelapse component is
 installed and enabled. Follow the
 [moonraker-timelapse setup guide](https://github.com/mainsail-crew/moonraker-timelapse)
-and restart Moonraker. After restarting, reload Fluidd.
+and restart Moonraker. After restarting, reload Fluiddified.
 
 ### No frames captured during the print
 
@@ -87,4 +87,4 @@ and restart Moonraker. After restarting, reload Fluidd.
 - Check Moonraker's log (`~/printer_data/logs/moonraker.log`) for render
   errors. FFmpeg is required — ensure it is installed on the host.
 - If raw frames were saved (enabled in Render settings), you can re-render
-  manually using FFmpeg outside of Fluidd.
+  manually using FFmpeg outside of Fluiddified.

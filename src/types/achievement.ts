@@ -59,4 +59,12 @@ export interface AchievementStats {
   totalPrintWeightGrams: number
   klipperRestarts: number
   saveConfigCount: number
+  /** Last user input time (ms) for `patience` while printing */
+  lastUserInteractionMs: number
+  /** Progress through Konami key sequence (0–10) */
+  konamiIndex: number
+  /** First time (ms) any heater held within 0.5°C of target; cleared when not */
+  tempPrecisionStableSinceMs: number | null
+  /** Bed exceeded ~80°C during current print job */
+  sawHotBedThisPrint: boolean
 }

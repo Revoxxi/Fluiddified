@@ -17,7 +17,11 @@
       </v-chip>
     </template>
 
-    <div class="achievements-card__scroll">
+    <div
+      ref="achievementsScroll"
+      class="achievements-card__scroll"
+      @scroll.passive="onAchievementsScroll"
+    >
       <v-tabs
         v-model="activeTab"
         show-arrows
@@ -139,6 +143,14 @@ export default class AchievementsCard extends Vue {
       open: true,
       definition: achievement,
       progress: this.getProgress(achievement.id)
+    }
+  }
+
+  onAchievementsScroll (e: Event) {
+    const el = e.target as HTMLElement
+    if (el.scrollHeight - el.scrollTop - el.clientHeight < 10) {
+      Promise.resolve(this.$typedDispatch('achievements/onScrollAchievementsListEnd', undefined, { root: true }))
+        .catch(() => undefined)
     }
   }
 

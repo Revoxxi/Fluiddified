@@ -35,7 +35,7 @@ automatically.
 ## Roles and permissions
 
 Fluiddified extends Moonraker’s [authorization](./authorization.md) model with
-three **roles** stored in Fluidd’s browser database namespace:
+three **roles** stored in Fluiddified’s browser database namespace:
 
 | Role   | Typical use                                      |
 |--------|--------------------------------------------------|
@@ -81,4 +81,4 @@ custom assets for this project.
 
 - [Authorization](./authorization.md) — Moonraker users, API keys, and JWT
 - [Configuration](../configuration.md) — Moonraker and Fluidd/Fluiddified settings
-- [Multiple printers](./multiple-printers.md) — Fluidd’s multi-printer UI (unchanged in the fork)
+- [Multiple printers](./multiple-printers.md) — multi-printer UI inherited from upstream Fluidd (unchanged in this fork)

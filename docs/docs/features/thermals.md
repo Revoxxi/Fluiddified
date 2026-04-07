@@ -4,12 +4,12 @@ title: Thermals
 
 # Thermals
 
-Fluidd displays real-time temperature data for all heaters, fans, and sensors
+Fluiddified displays real-time temperature data for all heaters, fans, and sensors
 configured in Klipper.
 
 ## Chart
 
-Fluidd's thermals chart shows temperatures and power applied to heaters and
+Fluiddified's thermals chart shows temperatures and power applied to heaters and
 fans in real time.
 
 - Click a heater, sensor, or fan name to toggle its visibility.
@@ -20,7 +20,7 @@ fans in real time.
 
 ## Presets
 
-Fluidd supports custom thermal presets — saved temperature profiles you can
+Fluiddified supports custom thermal presets — saved temperature profiles you can
 apply with one click. Configure your presets in the UI Settings page.
 
 ![Temperature preset configuration with preset name and target temperature fields](/assets/images/presets.png)
@@ -33,7 +33,7 @@ that need active cooling (e.g., PLA) or none at all (e.g., ABS).
 
 ## Sensors
 
-Fluidd displays any temperature sensor that Klipper exposes. Below are the
+Fluiddified displays any temperature sensor that Klipper exposes. Below are the
 two most common built-in sensor types.
 
 ### Host temperature (Raspberry Pi)
@@ -62,14 +62,14 @@ max_temp: 100
 
 Klipper supports a wide range of I2C temperature, humidity, and pressure
 sensors — including AHT10/20/30, BME280/680, BMP180/388, SHT3X, HTU21D,
-LM75, and more. Fluidd displays these automatically when configured. For
+LM75, and more. Fluiddified displays these automatically when configured. For
 setup details, refer to the
 [Klipper temperature sensor documentation](https://www.klipper3d.org/Config_Reference.html#temperature-sensors).
 
 ### MPC (Kalico)
 
 If you are running [Kalico](/features/third-party-integrations#kalico-firmware) with MPC
-(Model Predictive Control) configured for your extruder, Fluidd shows an
+(Model Predictive Control) configured for your extruder, Fluiddified shows an
 `MPC_CALIBRATE` button in the thermals card.
 
 ## Troubleshooting

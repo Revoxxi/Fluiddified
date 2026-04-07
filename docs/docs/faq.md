@@ -16,7 +16,7 @@ Serve the built UI from a machine on your network (see
 origin to `cors_domains` in `moonraker.conf`. Typical entries look like
 `*://fluiddified.local` or `http://192.168.1.50`.
 
-### Fluidd cannot connect to my printer
+### Fluiddified cannot connect to my printer
 
 Try these steps in order:
 
@@ -33,7 +33,7 @@ Try these steps in order:
 ### My printer shows as disconnected
 
 This usually means Klipper is not running or has encountered a configuration
-error. Open the Fluidd console — if there is an error message, it will
+error. Open the Fluiddified console — if there is an error message, it will
 describe what went wrong. Common fixes:
 
 - Check your `printer.cfg` for syntax errors.
@@ -56,9 +56,9 @@ commands — these must be passed as command parameters instead. Check the
 [Klipper config changes](https://www.klipper3d.org/Config_Changes.html) page
 for details.
 
-### I have an INVALID status for Fluidd, Moonraker, or Klipper on the Update panel
+### I have an INVALID status for Fluiddified, Moonraker, or Klipper on the Update panel
 
-Updates can sometimes fail and cause this error. Fluidd provides a recovery
+Updates can sometimes fail and cause this error. Fluiddified provides a recovery
 option — try that first. If it fails, reach out on
 [Discord](https://discord.gg/GZ3D5tqfcF).
 
@@ -66,8 +66,8 @@ option — try that first. If it fails, reach out on
 
 Three options:
 
-- **Fluidd settings backup** — go to Settings and use the backup and restore
-  options to save or load your Fluidd UI settings (layout, theme, presets,
+- **Fluiddified settings backup** — go to Settings and use the backup and restore
+  options to save or load your Fluiddified UI settings (layout, theme, presets,
   macros, etc.).
 - **Moonraker database backup** — go to the
   [System page](/features/system-and-notifications), find the database section, and click
@@ -82,7 +82,7 @@ Three options:
 
 ### How do I turn on my camera?
 
-Navigate to the UI Settings page and add a new camera. Fluidd supports
+Navigate to the UI Settings page and add a new camera. Fluiddified supports
 multiple camera types including MJPEG, HLS, and WebRTC. See
 [Cameras](/features/cameras) for details.
 
@@ -103,9 +103,9 @@ A few suggestions:
 
 ## Printing
 
-### Does Fluidd show a total layer count?
+### Does Fluiddified show a total layer count?
 
-Yes. Fluidd displays the current layer and total layer count during a print,
+Yes. Fluiddified displays the current layer and total layer count during a print,
 provided your slicer includes layer information in the G-code file.
 
 ### How do I set up Exclude Object?
@@ -157,5 +157,5 @@ when done, or use **Reset Layout** to restore the defaults. See
 ### How do I use a custom theme?
 
 Create a `.fluidd-theme` folder in your configuration directory and upload a
-`custom.css` file into it. Fluidd also supports custom backgrounds and logos.
+`custom.css` file into it. Fluiddified also supports custom backgrounds and logos.
 See [Customize — Custom Themes](/customize#custom-themes) for details.

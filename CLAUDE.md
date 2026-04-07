@@ -1,6 +1,6 @@
-# Fluidd AI Development Guide
+# Fluiddified AI Development Guide
 
-Fluidd is a Vue 2.7 + TypeScript web interface for Klipper 3D printers that communicates with Moonraker via WebSocket.
+**Fluiddified** is a fork of [Fluidd](https://github.com/fluidd-core/fluidd): a Vue 2.7 + TypeScript web interface for Klipper 3D printers that communicates with Moonraker via WebSocket. This guide describes the codebase; credit for the original architecture belongs to the Fluidd project and contributors.
 
 ## Architecture Overview
 
@@ -208,7 +208,7 @@ src/
 
 ## Dev Container
 
-- VSCode Dev Container (`.devcontainer/`) bundles a `docker-klipper-simulavr` container — real Klipper/Moonraker simulation on port 7125, Fluidd on port 8080
+- VSCode Dev Container (`.devcontainer/`) bundles a `docker-klipper-simulavr` container — real Klipper/Moonraker simulation on port 7125, Fluiddified dev UI on port 8080
 - `postCreateCommand` runs `npm ci && npm run bootstrap` automatically
 
 ## Documentation Site
@@ -232,7 +232,7 @@ docs/
 ├── docs/                  # Markdown content
 │   ├── index.md           # Homepage
 │   ├── getting-started.md # Installation (KIAUH, Docker, Manual, self-hosted, FluiddPI)
-│   ├── configuration.md   # Fluidd Config, Klipper, Moonraker, Multiple Printers
+│   ├── configuration.md   # fluidd-config, Klipper, Moonraker, Multiple Printers
 │   ├── customize.md       # Layout, themes, hiding components
 │   ├── features/
 │   │   ├── index.md           # Features overview (section landing page)

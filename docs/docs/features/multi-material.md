@@ -4,18 +4,18 @@ title: Multi-Material
 
 # Multi-Material
 
-Fluidd supports multi-extruder setups and integrates with Spoolman for
+Fluiddified supports multi-extruder setups and integrates with Spoolman for
 filament spool tracking.
 
 ## Multiple Extruders
 
-Fluidd supports single extruder, multiple extruder, and multiple extruder
+Fluiddified supports single extruder, multiple extruder, and multiple extruder
 stepper configurations. Pressure Advance values can be set for all
 configurations.
 
 ![Multiple extruder controls with per-extruder Pressure Advance settings](/assets/images/multiple-extruders.png)
 
-For multiple extruder stepper setups, Fluidd shows a section for each stepper
+For multiple extruder stepper setups, Fluiddified shows a section for each stepper
 where you can enable or disable it, associate it with an extruder, and set
 Pressure Advance values.
 
@@ -23,14 +23,14 @@ Pressure Advance values.
 
 ## Spool Management (Spoolman)
 
-Fluidd integrates with
+Fluiddified integrates with
 [Spoolman](https://github.com/Donkie/Spoolman) for filament spool tracking.
 
 ### Print start
 
-On print start, Fluidd shows a modal asking you to select a spool. You can
+On print start, Fluiddified shows a modal asking you to select a spool. You can
 pick one from the list or scan an associated QR code using an attached webcam.
-This modal can be disabled in Fluidd settings.
+This modal can be disabled in Fluiddified settings.
 
 ![Spoolman spool selection modal with a QR code scanner](/assets/images/spoolman-scan-spool.png)
 
@@ -43,7 +43,7 @@ dashboard card. Use the "Change Spool" button to switch spools mid-print.
 
 ### Sanity checks
 
-When starting a print or changing spools, Fluidd automatically checks:
+When starting a print or changing spools, Fluiddified automatically checks:
 
 1. A spool is selected.
 2. The spool has enough filament to finish the job.
@@ -70,7 +70,7 @@ gcode:
 
 ### Remembering spools across restarts
 
-If Fluidd detects a
+If Fluiddified detects a
 [`[save_variables]`](https://www.klipper3d.org/Config_Reference.html#save_variables)
 section in your configuration, it will automatically save the selected spool
 on each change. Use this macro to restore the selection after a restart:

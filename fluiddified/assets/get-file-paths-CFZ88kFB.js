@@ -1,1 +1,0 @@
-import{o as e}from"./socketActions-Ba0tcg7j.js";var t=(t,n=``)=>{let r=t.split(`/`),i=e.FILTERED_FOLDER_NAMES.some(e=>r.includes(e)),a=r.pop()??``,o=r.join(`/`),s=n&&o?`${n}/${o}`:n||o,c=s?`${s}/${a}`:a,l=a.lastIndexOf(`.`);return{root:n,rootPath:s,rootPathFilename:c,path:o,pathFilename:t,filename:a,extension:l>=0?a.substring(l):``,filtered:i}};export{t};

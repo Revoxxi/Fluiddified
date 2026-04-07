@@ -38,6 +38,7 @@
 <script lang="ts">
 import { Component, Mixins, Watch } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
+import { eventTargetIsContentEditable } from '@/util/event-helpers'
 import { pluginRegistry } from '@/plugins/pluginRegistry'
 import type { LayoutConfig, LayoutContainer } from '@/store/layout/types'
 
@@ -49,6 +50,28 @@ export default class Dashboard extends Mixins(StateMixin) {
 
   mounted () {
     this.onLayoutChange()
+    window.addEventListener('keydown', this.handleKonamiKeydown, true)
+  }
+
+  beforeDestroy () {
+    window.removeEventListener('keydown', this.handleKonamiKeydown, true)
+  }
+
+  handleKonamiKeydown (e: KeyboardEvent) {
+    if (!this.$typedState.achievements.enabled) return
+    if (eventTargetIsContentEditable(e)) return
+    const t = e.target
+    if (t instanceof HTMLInputElement || t instanceof HTMLTextAreaElement || t instanceof HTMLSelectElement) {
+      return
+    }
+    const k = e.key
+    const allowed = (
+      k === 'ArrowUp' || k === 'ArrowDown' || k === 'ArrowLeft' || k === 'ArrowRight' ||
+      k === 'b' || k === 'B' || k === 'a' || k === 'A'
+    )
+    if (!allowed) return
+    Promise.resolve(this.$typedDispatch('achievements/onKonamiKey', k, { root: true }))
+      .catch(() => undefined)
   }
 
   get columnCount () {

@@ -10,7 +10,7 @@ It will notify you of available updates — and provide buttons to upgrade each 
 ## Automated Updates
 
 !!! tip "Recommended update order"
-    1. Klipper — firmware changes may affect Moonraker or Fluidd behavior
+    1. Klipper — firmware changes may affect Moonraker or Fluiddified behavior
     2. Moonraker — API changes should be applied before updating frontends
     3. Fluiddified
     4. Other clients

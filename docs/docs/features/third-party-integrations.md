@@ -4,7 +4,7 @@ title: Third-Party Integrations
 
 # Third-Party Integrations
 
-Fluidd integrates with a wide range of third-party hardware and software
+Fluiddified integrates with a wide range of third-party hardware and software
 projects in the Klipper ecosystem. This page lists the integrations that have
 dedicated UI support beyond basic Klipper config editing.
 
@@ -25,7 +25,7 @@ Features include:
 - Espooler display
 - Endless spool support
 
-Requires Happy Hare installed on your Klipper instance. Fluidd will
+Requires Happy Hare installed on your Klipper instance. Fluiddified will
 automatically show the MMU dashboard card when it detects the `mmu` Klipper
 object.
 
@@ -52,10 +52,10 @@ Requires AFC-Klipper-Add-On installed on your Klipper instance.
 
 ### Beacon
 
-Fluidd includes a [Beacon](https://docs.beacon3d.com/) eddy current probe
+Fluiddified includes a [Beacon](https://docs.beacon3d.com/) eddy current probe
 widget that appears automatically when the probe is detected. From this card
 you can view probe samples, manage saved probe models, and save new models
-directly from the UI. No extra Fluidd configuration is needed.
+directly from the UI. No extra Fluiddified configuration is needed.
 
 [Beacon documentation](https://docs.beacon3d.com/){.md-button}
 
@@ -69,17 +69,17 @@ detected:
 - **Scan calibration** — performs a full bed scan for mesh generation.
 - **Touch calibration** — uses physical touch for Z offset calibration.
 
-No extra Fluidd configuration is needed; the buttons appear automatically
-when Fluidd detects a Cartographer or Scanner probe.
+No extra Fluiddified configuration is needed; the buttons appear automatically
+when Fluiddified detects a Cartographer or Scanner probe.
 
 [Cartographer documentation](https://docs.cartographer3d.com/){.md-button}
 
 ### Other probes
 
 Any probe configured in Klipper (`[probe]`, `[bltouch]`, `[smart_effector]`) is
-automatically visible in Fluidd's Toolhead card with its current state. This
+automatically visible in Fluiddified's Toolhead card with its current state. This
 includes Smart Effector, Probe Eddy Current, and Load Cell sensors.
-No extra Fluidd configuration is needed.
+No extra Fluiddified configuration is needed.
 
 ### Temperature & humidity sensors
 
@@ -90,19 +90,19 @@ BME280, BMP180/388, SHT3X, HTU21D, LM75, PT100/PT1000, and more. See
 ## Kalico Firmware
 
 [Kalico](https://docs.kalico.gg) (formerly Danger Klipper) is a community
-fork of Klipper that adds advanced features for experienced users. Fluidd
+fork of Klipper that adds advanced features for experienced users. Fluiddified
 detects Kalico automatically and adapts its interface — no extra configuration
 is needed.
 
 Kalico can be installed via [KIAUH](https://github.com/dw-0/kiauh) as an
 alternative firmware.
 
-### Features exposed in Fluidd
+### Features exposed in Fluiddified
 
 | Feature                            | Description                                                                                                                                                                                                                        |
 |------------------------------------|------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------|
-| **MPC (Model Predictive Control)** | An alternative to PID for extruder temperature control. When configured (`control: mpc` in `[extruder]`), Fluidd shows an `MPC_CALIBRATE` button in the thermals card. See the [Kalico MPC docs](https://docs.kalico.gg/MPC.html). |
-| **Non-critical MCUs**              | Mark microcontrollers as optional with `is_non_critical: true` in `[mcu]`. Fluidd gracefully disables controls for disconnected optional MCUs instead of showing errors.                                                           |
+| **MPC (Model Predictive Control)** | An alternative to PID for extruder temperature control. When configured (`control: mpc` in `[extruder]`), Fluiddified shows an `MPC_CALIBRATE` button in the thermals card. See the [Kalico MPC docs](https://docs.kalico.gg/MPC.html). |
+| **Non-critical MCUs**              | Mark microcontrollers as optional with `is_non_critical: true` in `[mcu]`. Fluiddified gracefully disables controls for disconnected optional MCUs instead of showing errors.                                                           |
 | **Dockable probes**                | Native support for Quickdraw, Klicky/Unklicky, and other dockable probe systems without external macros.                                                                                                                           |
 | **Per-axis acceleration**          | Independent X/Y acceleration and velocity limits for CoreXY and CoreXZ kinematics, shown in the Toolhead card.                                                                                                                     |
 | **Fan curves**                     | Temperature-based automatic fan speed curves.                                                                                                                                                                                      |
@@ -132,7 +132,7 @@ See [Timelapse](/features/timelapse) for details.
 
 ### Crowsnest
 
-Recommended camera manager for Klipper setups. Fluidd recognizes
+Recommended camera manager for Klipper setups. Fluiddified recognizes
 `crowsnest.conf` in the config file editor. See [Cameras](/features/cameras)
 for supported streaming types.
 
@@ -140,14 +140,14 @@ for supported streaming types.
 
 ### KlipperScreen
 
-Fluidd recognizes `klipperscreen.conf` for editing in the config file editor.
+Fluiddified recognizes `klipperscreen.conf` for editing in the config file editor.
 
 [KlipperScreen documentation](https://klipperscreen.github.io/KlipperScreen/){.md-button}
 
 ### Obico
 
 [Obico](https://www.obico.io/) (formerly The Spaghetti Detective) provides
-remote access to your full Fluidd interface from anywhere, AI-powered print
+remote access to your full Fluiddified interface from anywhere, AI-powered print
 failure detection, and mobile apps for iOS and Android. It is 100% open-source
 and can be self-hosted. Follow the
 [Obico setup guide](https://obico.io/docs/user-guides/klipper-setup/) to get
@@ -158,7 +158,7 @@ started.
 ### OctoEverywhere
 
 [OctoEverywhere](https://octoeverywhere.com/) is a cloud service with a free
-tier that provides remote access to your Fluidd interface with full-framerate
+tier that provides remote access to your Fluiddified interface with full-framerate
 webcam streaming. Premium plans unlock Gadget AI print failure detection,
 real-time notifications via Telegram, SMS, and Discord, and mobile app support
 via Mobileraker and OctoApp.

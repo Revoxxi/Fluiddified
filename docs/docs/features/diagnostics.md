@@ -22,7 +22,7 @@ To enable the diagnostics dashboard:
 ## Dashboard
 
 The dashboard is separated into 4 columns and allows you to customize the
-position of each chart. To edit the dashboard layout, simply open Fluidd's
+position of each chart. To edit the dashboard layout, simply open Fluiddified's
 layout editor via the side menu:
 
 ![Navigation side menu with the Diagnostics item highlighted](/assets/images/side_menu.png)

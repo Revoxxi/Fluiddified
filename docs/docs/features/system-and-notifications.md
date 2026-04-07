@@ -43,21 +43,20 @@ into your host:
     [Moonraker power documentation](https://moonraker.readthedocs.io/en/latest/configuration/#power)
     for setup details and supported device types.
 
-When configured, Fluidd displays power device controls on the dashboard and
+When configured, Fluiddified displays power device controls on the dashboard and
 in the top navigation bar. You can toggle devices on and off directly from
 the UI.
 
 ## Notifications
 
-Fluidd has a built-in notification system that warns you of potential issues:
+Fluiddified has a built-in notification system that warns you of potential issues:
 
-- **Pending updates** — shown when Klipper, Moonraker, Fluidd, or other
+- **Pending updates** — shown when Klipper, Moonraker, Fluiddified, or other
   components have updates available.
 - **Throttle conditions** — fires when the host reports throttling (e.g.
   undervoltage or thermal throttling on a Raspberry Pi via `vcgencmd`).
-- **Moonraker announcements** — important messages from the Fluidd developers
-  and maintainers, delivered via the `[announcements]` Moonraker component.
-- **Failed components** — if a Moonraker component fails to load, Fluidd
+- **Moonraker announcements** — important messages from announcement feeds (for example the `fluidd` subscription), delivered via the `[announcements]` Moonraker component.
+- **Failed components** — if a Moonraker component fails to load, Fluiddified
   displays a warning with the component name and error details.
 
 ![Notifications panel showing Moonraker announcements and component warnings](/assets/images/notifications.png)

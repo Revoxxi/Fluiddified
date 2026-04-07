@@ -4,7 +4,7 @@ title: Macros
 
 # Macros
 
-Fluidd displays all G-code macros defined in your Klipper configuration. You
+Fluiddified displays all G-code macros defined in your Klipper configuration. You
 can toggle their visibility, organize them into categories, and assign colors.
 
 Macros prefixed with an underscore (`_`) are hidden from the macro panel
@@ -18,7 +18,7 @@ a macro's menu to assign it to a category and choose a color.
 
 ## Tool Card Macros
 
-Fluidd detects specific macro names and adds dedicated buttons to the
+Fluiddified detects specific macro names and adds dedicated buttons to the
 Toolhead card's Tools dropdown. If multiple names are defined for the same
 action, the first match in the list is used:
 
@@ -39,9 +39,9 @@ action, the first match in the list is used:
 ### Macro not appearing on the dashboard
 
 - Macros prefixed with `_` are hidden automatically. Remove the underscore if you want the macro visible.
-- Verify the macro loaded without errors — check the Fluidd console for any startup messages after a Klipper restart. A config syntax problem will prevent macros from loading.
-- If the macro appears in Klipper but not Fluidd, try refreshing the page after restarting Klipper.
+- Verify the macro loaded without errors — check the Fluiddified console for any startup messages after a Klipper restart. A config syntax problem will prevent macros from loading.
+- If the macro appears in Klipper but not Fluiddified, try refreshing the page after restarting Klipper.
 
 ### Tool Card button not appearing
 
-Fluidd matches macro names case-insensitively, but the name must be an exact match otherwise. Confirm your macro name matches one of the names listed in the [Tool Card Macros](#tool-card-macros) table above.
+Fluiddified matches macro names case-insensitively, but the name must be an exact match otherwise. Confirm your macro name matches one of the names listed in the [Tool Card Macros](#tool-card-macros) table above.

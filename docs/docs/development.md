@@ -33,7 +33,7 @@ Follow the instruction from [Docker](https://docs.docker.com/engine/install/) to
 
 ### Open the Dev Container
 
-At this point all you need to do is open Fluidd folder in VSCode and you should see a
+At this point all you need to do is open this repository folder in VSCode and you should see a
 popup indicating that it found a Dev Container configuration file; click the "Reopen in
 Container" to have everything configured.
 
@@ -41,7 +41,7 @@ The configuration includes a container running [docker-klipper-simulavr](https:/
 a virtualized Klipper and Moonraker image that makes it easy to debug without a real
 printer.
 
-## Running Fluidd locally
+## Running Fluiddified locally
 
 ### Install Node.js
 
@@ -57,7 +57,7 @@ npm --version
 ### Install dependencies
 
 ```bash
-cd .../path/to/fluidd
+cd .../path/to/fluiddified
 npm ci
 ```
 
@@ -85,7 +85,7 @@ Follow the instructions from [Python](https://www.python.org/) to install Python
 ### Install dependencies
 
 ```bash
-cd .../path/to/fluidd/docs
+cd .../path/to/fluiddified/docs
 python3 -m venv .venv
 source .venv/bin/activate
 pip install -r requirements.txt
@@ -114,13 +114,13 @@ build expectations for third-party bundles, see
 
 ## Localization
 
-Fluidd uses [vue-i18n](https://kazupon.github.io/vue-i18n/) for its localization.
+Fluiddified uses [vue-i18n](https://kazupon.github.io/vue-i18n/) for localization (inherited from upstream Fluidd).
 
 Locales can be found in the `src/locales` folder and are in YAML format.
 
 ### How to contribute
 
-Translations are hosted on Weblate. If you want to help translating our project, please click the widget below:
+Translations for shared UI strings are coordinated on **Weblate** (upstream Fluidd project). If you want to help translate those locales, use the widget below:
 
 [![Translation status](https://hosted.weblate.org/widget/fluidd/horizontal-auto.svg)](https://hosted.weblate.org/engage/fluidd/ "Translation status")
 
