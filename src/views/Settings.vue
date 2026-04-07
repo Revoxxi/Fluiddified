@@ -33,7 +33,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator'
+import { Component, Mixins, Watch } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 
 import MacroSettings from '@/components/settings/macros/MacroSettings.vue'
@@ -78,6 +78,18 @@ import AchievementSettings from '@/components/settings/AchievementSettings.vue'
   }
 })
 export default class Settings extends Mixins(StateMixin) {
+  @Watch('$route', { immediate: true })
+  onSettingsRouteChange () {
+    const n = this.$route.name
+    if (n !== 'settings' && n !== 'macro_category_settings') {
+      return
+    }
+    const h = this.$route.hash
+    if (h.length > 1) {
+      this.$typedDispatch('achievements/onSettingsVisit', h)
+    }
+  }
+
   get supportsVersions (): boolean {
     return this.$typedGetters['server/componentSupport']('update_manager')
   }

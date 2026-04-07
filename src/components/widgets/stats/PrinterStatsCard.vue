@@ -6,6 +6,7 @@
     <template #menu>
       <app-btn-collapse-group :collapsed="narrow">
         <app-btn
+          v-if="isOwner"
           small
           class="me-1 my-1"
           @click="handleResetStats"
@@ -149,11 +150,12 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator'
+import { Component, Prop, Mixins } from 'vue-property-decorator'
 import { SocketActions } from '@/api/socketActions'
+import AuthMixin from '@/mixins/auth'
 
 @Component({})
-export default class PrinterStatsCard extends Vue {
+export default class PrinterStatsCard extends Mixins(AuthMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
 
@@ -190,6 +192,8 @@ export default class PrinterStatsCard extends Vue {
   }
 
   async handleResetStats () {
+    if (!this.isOwner) return
+
     const result = await this.$confirm(
       this.$tc('app.history.msg.confirm_stats'),
       { title: this.$tc('app.general.label.confirm'), color: 'card-heading', icon: '$error' }

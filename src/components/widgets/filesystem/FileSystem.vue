@@ -16,6 +16,7 @@
       :search.sync="search"
       :path="visiblePath"
       :disabled="disabled"
+      :lock-mutations="lockFileMutations"
       :loading="filesLoading"
       :headers="configurableHeaders"
       @root-change="handleRootChange"
@@ -28,7 +29,7 @@
     />
 
     <file-system-bulk-actions
-      v-if="selected.length > 0"
+      v-if="selected.length > 0 && !lockFileMutations"
       :root="currentRoot"
       :path="visiblePath"
       :selected="selected"
@@ -49,7 +50,8 @@
       :search="search"
       :files="files"
       :drag-state.sync="dragState.browserState"
-      :bulk-actions="bulkActions"
+      :bulk-actions="effectiveBulkActions"
+      :lock-mutations="lockFileMutations"
       :large-thumbnails="currentRoot === 'timelapse'"
       @row-click="handleRowClick"
       @move="handleMove"
@@ -60,6 +62,7 @@
       v-if="contextMenuState.open"
       v-model="contextMenuState.open"
       :root="currentRoot"
+      :lock-mutations="lockFileMutations"
       :file="contextMenuState.file"
       :position-x="contextMenuState.x"
       :position-y="contextMenuState.y"
@@ -142,6 +145,7 @@ import type { AppDirectory, AppFile, AppFileWithMeta, FileFilterType, FileBrowse
 import StateMixin from '@/mixins/state'
 import FilesMixin from '@/mixins/files'
 import ServicesMixin from '@/mixins/services'
+import AuthMixin from '@/mixins/auth'
 import FileSystemToolbar from './FileSystemToolbar.vue'
 import FileSystemBulkActions from './FileSystemBulkActions.vue'
 import FileSystemBrowser from './FileSystemBrowser.vue'
@@ -175,7 +179,7 @@ import type { KlipperSaveAndRestartAction } from '@/store/config/types'
     FilePreviewDialog
   }
 })
-export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesMixin) {
+export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesMixin, AuthMixin) {
   // Can be a list of roots, or a single root.
   @Prop({ type: [String, Array], required: true })
   readonly roots!: string | string[]
@@ -277,6 +281,15 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   // Properties of the current root.
   get rootProperties (): RootProperties {
     return this.$typedGetters['files/getRootProperties'](this.currentRoot)
+  }
+
+  /** Moonraker file-tree mutations (delete/move/upload/zip): Fluidd owners only. */
+  get lockFileMutations (): boolean {
+    return !this.isOwner
+  }
+
+  get effectiveBulkActions (): boolean {
+    return this.bulkActions === true && !this.lockFileMutations
   }
 
   // If this root is available or not.
@@ -979,6 +992,8 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   }
 
   async handleSaveFileChanges (contents: string, serviceToRestart?: string) {
+    if (this.lockFileMutations) return
+
     const file = new File([contents], this.fileEditorDialogState.filename)
 
     if (this.fileEditorDialogState.open) {
@@ -986,6 +1001,14 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
     }
 
     await this.uploadFile(file, this.visiblePath, this.currentRoot, false)
+
+    Promise.resolve(
+      this.$typedDispatch('achievements/onConfigFileSaved', {
+        root: this.currentRoot,
+        filename: this.fileEditorDialogState.filename,
+        contents
+      }, { root: true })
+    ).catch(() => undefined)
 
     this.fileEditorDialogState.loading = false
 
@@ -1031,6 +1054,8 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   }
 
   handleMove (source: FileBrowserEntry | FileBrowserEntry[], destination: AppDirectory) {
+    if (this.lockFileMutations) return
+
     let destinationPath = `${this.currentPath}/${destination.dirname}`
     if (destination.dirname === '..') {
       const arr = this.currentPath.split('/')
@@ -1083,19 +1108,23 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   }
 
   handleRename (name: string) {
+    if (this.lockFileMutations) return
+
     const src = `${this.currentPath}/${this.fileNameDialogState.value}`
     const dest = `${this.currentPath}/${name}`
     SocketActions.serverFilesMove(src, dest)
   }
 
   handleDuplicate (name: string) {
+    if (this.lockFileMutations) return
+
     const src = `${this.currentPath}/${this.fileNameDialogState.value}`
     const dest = `${this.currentPath}/${name}`
     SocketActions.serverFilesCopy(src, dest)
   }
 
   async handleRemove (file: FileBrowserEntry | FileBrowserEntry[]) {
-    if (this.disabled) return
+    if (this.disabled || this.lockFileMutations) return
 
     const items = Array.isArray(file)
       ? file.filter(item => item.name !== '..')
@@ -1124,6 +1153,10 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   }
 
   async handleUpload (files: FileList | File[] | FileWithPath[], print: boolean) {
+    if (!this.isOwner && this.currentRoot === 'timelapse') {
+      return
+    }
+
     const wait = `${this.$waits.onFileSystem}/${this.currentPath}/`
 
     this.$typedDispatch('wait/addWait', wait)
@@ -1134,6 +1167,8 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   }
 
   handleAddDir (name: string) {
+    if (this.lockFileMutations) return
+
     SocketActions.serverFilesPostDirectory(`${this.currentPath}/${name}`)
   }
 
@@ -1181,6 +1216,8 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
   }
 
   handleCreateZip (file: FileBrowserEntry | FileBrowserEntry[]) {
+    if (this.lockFileMutations) return
+
     const timestamp = this.$filters.formatTimestamp(Date.now())
 
     const dest = Array.isArray(file)
@@ -1230,6 +1267,10 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
       event.dataTransfer
     ) {
       if (hasFileDataTransferTypeInDataTransfer(event.dataTransfer, 'files')) {
+        if (this.lockFileMutations) {
+          return
+        }
+
         const files = getFileDataTransferDataFromDataTransfer(event.dataTransfer, 'files')
 
         for (const file of files.items) {
@@ -1238,6 +1279,10 @@ export default class FileSystem extends Mixins(StateMixin, FilesMixin, ServicesM
           SocketActions.serverFilesCopy(src, dest)
         }
       } else if (hasFilesInDataTransfer(event.dataTransfer)) {
+        if (!this.isOwner && this.currentRoot === 'timelapse') {
+          return
+        }
+
         const files = await getFilesFromDataTransfer(event.dataTransfer)
 
         if (files) {

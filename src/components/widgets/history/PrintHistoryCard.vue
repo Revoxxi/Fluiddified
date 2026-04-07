@@ -21,6 +21,7 @@
           <span>{{ $t('app.general.btn.load_all') }}</span>
         </app-btn>
         <app-btn
+          v-if="isOwner"
           small
           class="ms-1 my-1"
           @click="handleRemoveAll"
@@ -39,16 +40,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator'
+import { Component, Prop, Mixins } from 'vue-property-decorator'
 import JobHistory from '@/components/widgets/history/JobHistory.vue'
 import { SocketActions } from '@/api/socketActions'
+import AuthMixin from '@/mixins/auth'
 
 @Component({
   components: {
     JobHistory
   }
 })
-export default class PrinterHistoryCard extends Vue {
+export default class PrinterHistoryCard extends Mixins(AuthMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
 

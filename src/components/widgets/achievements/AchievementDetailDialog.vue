@@ -128,6 +128,7 @@
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator'
 import type { AchievementDefinition, AchievementProgress, AchievementRarity } from '@/types/achievement'
+import { formatAchievementDescription } from '@/util/achievementDisplay'
 import AchievementRarityBadge from './AchievementRarityBadge.vue'
 
 const rarityColors: Record<AchievementRarity, string> = {
@@ -170,7 +171,9 @@ export default class AchievementDetailDialog extends Vue {
   }
 
   get displayDescription (): string {
-    return this.secretLocked ? '?' : this.definition.description
+    return this.secretLocked
+      ? '?'
+      : formatAchievementDescription(this.definition, this.progress)
   }
 
   get displayIcon (): string {

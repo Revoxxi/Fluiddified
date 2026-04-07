@@ -189,6 +189,9 @@ export default class FileSystemToolbar extends Mixins(StatesMixin) {
   @Prop({ type: Boolean })
   readonly disabled?: boolean
 
+  @Prop({ type: Boolean })
+  readonly lockMutations?: boolean
+
   // If the fs is loading or not.
   @Prop({ type: Boolean })
   readonly loading?: boolean
@@ -197,7 +200,7 @@ export default class FileSystemToolbar extends Mixins(StatesMixin) {
   searchModel!: string
 
   get readonly () {
-    return this.rootProperties.readonly
+    return this.rootProperties.readonly || this.lockMutations === true
   }
 
   get canConfigure () {

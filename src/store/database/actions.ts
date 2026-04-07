@@ -19,8 +19,11 @@ export const actions = {
     commit('setServerDatabaseList', payload)
   },
 
-  async onServerDatabasePostBackup ({ commit }, payload: { backup_path: string }) {
+  async onServerDatabasePostBackup ({ commit, dispatch }, payload: { backup_path: string }) {
     commit('setServerDatabasePostBackup', payload)
+    Promise.resolve(
+      dispatch('achievements/onDatabaseBackupCreated', undefined, { root: true })
+    ).catch(() => undefined)
   },
 
   async onServerDatabaseDeleteBackup ({ commit }, payload: { backup_path: string }) {

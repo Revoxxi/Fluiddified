@@ -32,9 +32,16 @@ export const actions = {
   /**
    * The result of a specific gcode request.
    */
-  async onGcodeScript ({ dispatch }, payload) {
-    // If the response is not ok, pass it to the console.
-    if (payload && payload.result && payload.result !== 'ok') {
+  async onGcodeScript ({ dispatch }, payload: { result?: string, __request__?: { params?: { script?: string } } }) {
+    if (payload?.result === 'ok') {
+      const script = payload.__request__?.params?.script
+      if (typeof script === 'string' && script.trim().length > 0) {
+        dispatch('achievements/onGcodeScriptOk', script, { root: true })
+      }
+      return
+    }
+
+    if (payload?.result && payload.result !== 'ok') {
       dispatch('onAddConsoleEntry', { message: Globals.CONSOLE_RECEIVE_PREFIX + payload.result })
     }
   },
@@ -55,10 +62,6 @@ export const actions = {
     }
 
     commit('setConsoleEntry', payload)
-
-    if (payload.type === 'command') {
-      dispatch('achievements/onCommandSent', payload.message, { root: true })
-    }
 
     dispatch('onUpdatePromptDialog', payload)
   },

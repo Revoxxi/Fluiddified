@@ -11,6 +11,7 @@ export const defaultState = (): AchievementsState => {
       distinctDaysPrinted: [],
       distinctThemesUsed: [],
       weekendsPrinted: [],
+      weeksWithPrint: [],
       webcamsViewed: [],
       settingsSectionsVisited: [],
       shortcutsUsed: [],
@@ -23,6 +24,8 @@ export const defaultState = (): AchievementsState => {
       lastPrintEndTime: 0,
       pageRefreshCount: 0,
       uptimeMs: 0,
+      uptimeSessionStartMs: null,
+      totalPrintWeightGrams: 0,
       klipperRestarts: 0,
       saveConfigCount: 0
     },

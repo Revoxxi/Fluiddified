@@ -40,6 +40,7 @@
           </app-nav-item>
 
           <app-nav-item
+            v-if="hasRouteAccess('owner')"
             icon="$console"
             to="console"
           >
@@ -109,7 +110,7 @@
           </app-nav-item>
 
           <app-nav-item
-            v-if="hasRouteAccess('user')"
+            v-if="hasRouteAccess('owner')"
             icon="$cog"
             to="settings"
           >

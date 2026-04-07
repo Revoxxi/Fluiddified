@@ -17,7 +17,7 @@ export const actions = {
     commit('setInitLayout', payload)
   },
 
-  async onLayoutChange ({ commit, state }, payload: { name: string; value: LayoutContainer }) {
+  async onLayoutChange ({ commit, state, dispatch, rootState }, payload: { name: string; value: LayoutContainer }) {
     const layout = state.layouts[payload.name]
     if (layout || payload.name.startsWith('dashboard')) {
       commit('setLayoutChange', payload)
@@ -25,6 +25,9 @@ export const actions = {
         Globals.MOONRAKER_DB.fluidd.ROOTS.layout.name + '.layouts',
         state.layouts
       )
+      if (rootState.config.layoutMode) {
+        dispatch('achievements/onLayoutChange', undefined, { root: true })
+      }
     }
   },
 

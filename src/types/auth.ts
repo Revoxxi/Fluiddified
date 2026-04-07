@@ -25,7 +25,7 @@ export const Permissions = {
   MACRO_EDIT: { id: 'macro.edit', name: 'Edit Macros', minRole: 'owner' },
 
   FILE_UPLOAD: { id: 'file.upload', name: 'Upload Files', minRole: 'user' },
-  FILE_DELETE: { id: 'file.delete', name: 'Delete Files', minRole: 'user' },
+  FILE_DELETE: { id: 'file.delete', name: 'Delete Files', minRole: 'owner' },
   FILE_EDIT: { id: 'file.edit', name: 'Edit Config Files', minRole: 'owner' },
   FILE_VIEW: { id: 'file.view', name: 'View Files', minRole: 'guest' },
 
@@ -35,14 +35,14 @@ export const Permissions = {
 
   CAMERA_VIEW: { id: 'camera.view', name: 'View Camera', minRole: 'guest' },
 
-  CONSOLE_SEND: { id: 'console.send', name: 'Send Console Commands', minRole: 'user' },
-  CONSOLE_VIEW: { id: 'console.view', name: 'View Console', minRole: 'guest' },
+  CONSOLE_SEND: { id: 'console.send', name: 'Send Console Commands', minRole: 'owner' },
+  CONSOLE_VIEW: { id: 'console.view', name: 'View Console', minRole: 'owner' },
 
   SYSTEM_RESTART: { id: 'system.restart', name: 'Restart Services', minRole: 'user' },
   SYSTEM_UPDATE: { id: 'system.update', name: 'Update Software', minRole: 'owner' },
   SYSTEM_POWER: { id: 'system.power', name: 'Power Devices', minRole: 'owner' },
 
-  SETTINGS_VIEW: { id: 'settings.view', name: 'View Settings', minRole: 'user' },
+  SETTINGS_VIEW: { id: 'settings.view', name: 'View Settings', minRole: 'owner' },
   SETTINGS_MODIFY: { id: 'settings.modify', name: 'Modify Settings', minRole: 'owner' },
 
   USER_MANAGE: { id: 'user.manage', name: 'Manage Users', minRole: 'owner' },

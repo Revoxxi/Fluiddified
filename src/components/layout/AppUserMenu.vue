@@ -58,7 +58,10 @@
         dense
         class="py-0"
       >
-        <v-list-item @click="$filters.routeTo({ name: 'settings', hash: '#auth' })">
+        <v-list-item
+          v-if="canManageMoonrakerAccounts"
+          @click="$filters.routeTo({ name: 'settings', hash: '#auth' })"
+        >
           <v-list-item-icon>
             <v-icon>$addAccount</v-icon>
           </v-list-item-icon>
@@ -112,6 +115,10 @@ export default class AppNotificationMenu extends Vue {
       this.user.username === '_TRUSTED_USER_' ||
       this.user.username === '_API__API_KEY_USER_USER_'
     )
+  }
+
+  get canManageMoonrakerAccounts (): boolean {
+    return this.$typedGetters['auth/canManageMoonrakerAccounts']
   }
 
   async handleLogout () {

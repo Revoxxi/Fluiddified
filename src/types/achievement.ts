@@ -39,6 +39,8 @@ export interface AchievementStats {
   distinctDaysPrinted: string[]
   distinctThemesUsed: string[]
   weekendsPrinted: string[]
+  /** Monday-anchored date keys (YYYY-M-D) for weeks with ≥1 completed print */
+  weeksWithPrint: string[]
   webcamsViewed: string[]
   settingsSectionsVisited: string[]
   shortcutsUsed: string[]
@@ -51,6 +53,10 @@ export interface AchievementStats {
   lastPrintEndTime: number
   pageRefreshCount: number
   uptimeMs: number
+  /** When Klippy was last ready — used to accumulate `uptimeMs` on disconnect */
+  uptimeSessionStartMs: number | null
+  /** Estimated filament mass from job metadata (grams) */
+  totalPrintWeightGrams: number
   klipperRestarts: number
   saveConfigCount: number
 }

@@ -15,7 +15,7 @@
               <th>{{ $t('app.general.title.home') }}</th>
               <td><kbd>{{ keyboardShortcuts.home }}</kbd></td>
             </tr>
-            <tr>
+            <tr v-if="hasMinRole('owner')">
               <th>{{ $t('app.general.title.console') }}</th>
               <td><kbd>{{ keyboardShortcuts.console }}</kbd></td>
             </tr>
@@ -112,10 +112,11 @@
 <script lang="ts">
 import { Globals } from '@/globals'
 import { eventTargetIsContentEditable, keyboardEventToKeyboardShortcut } from '@/util/event-helpers'
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Mixins } from 'vue-property-decorator'
+import AuthMixin from '@/mixins/auth'
 
 @Component({})
-export default class KeyboardShortcutsDialog extends Vue {
+export default class KeyboardShortcutsDialog extends Mixins(AuthMixin) {
   open = false
 
   get keyboardShortcuts () {
@@ -152,6 +153,7 @@ export default class KeyboardShortcutsDialog extends Vue {
       event.preventDefault()
 
       this.open = true
+      this.$typedDispatch('achievements/onKeyboardShortcutUsed', shortcut, { root: true })
     }
   }
 

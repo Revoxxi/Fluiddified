@@ -44,7 +44,7 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig,
     meta: {
       ...defaultRouteConfig.meta,
-      minRole: 'guest' as Role
+      minRole: 'owner' as Role
     }
   },
   {
@@ -123,7 +123,7 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig,
     meta: {
       hasSubNavigation: true,
-      minRole: 'user' as Role
+      minRole: 'owner' as Role
     },
     components: {
       default: () => import('@/views/Settings.vue'),
@@ -135,7 +135,7 @@ const routes: Array<RouteConfig> = [
         name: 'macro_category_settings',
         meta: {
           hasSubNavigation: true,
-          minRole: 'user' as Role
+          minRole: 'owner' as Role
         },
         components: {
           default: () => import('@/components/settings/macros/MacroCategorySettings.vue'),
@@ -151,7 +151,8 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig,
     meta: {
       ...defaultRouteConfig.meta,
-      minRole: 'guest' as Role
+      minRole: 'guest' as Role,
+      fillHeight: true
     }
   },
   {
@@ -233,6 +234,11 @@ router.beforeEach((to, from, next) => {
   store.commit('config/setContainerColumnCount', 2)
   store.commit('config/setLayoutMode', false)
   next()
+})
+
+router.afterEach((to) => {
+  Promise.resolve(store.dispatch('achievements/onNavigate', to.fullPath))
+    .catch(() => undefined)
 })
 
 declare module 'vue-router' {

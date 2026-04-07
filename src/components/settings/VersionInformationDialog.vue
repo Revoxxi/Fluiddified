@@ -102,6 +102,7 @@
 
 <script lang="ts">
 import type { VersionInfo } from '@/store/version/types'
+import { getGithubRepoBaseUrl } from '@/util/versionGithubBaseUrl'
 import { Component, Vue, Prop, VModel } from 'vue-property-decorator'
 
 @Component({})
@@ -121,10 +122,7 @@ export default class VersionInformationDialog extends Vue {
   }
 
   get baseUrl () {
-    if ('owner' in this.component) {
-      return `https://github.com/${this.component.owner}/${this.component.repo_name || this.component.name}`
-    }
-    return ''
+    return getGithubRepoBaseUrl(this.component)
   }
 }
 </script>

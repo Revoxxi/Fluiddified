@@ -295,7 +295,7 @@ export default class AppBar extends Mixins(StateMixin, ServicesMixin, FilesMixin
   }
 
   get showSaveConfigAndRestartForPendingChanges (): boolean {
-    if (!this.showSaveConfigAndRestart || !this.saveConfigPending) {
+    if (!this.isOwner || !this.showSaveConfigAndRestart || !this.saveConfigPending) {
       return false
     }
 

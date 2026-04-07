@@ -501,6 +501,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
       event.preventDefault()
       if (this.canEmergencyStop) {
         this.emergencyStop()
+        this.recordShortcutUsed('Ctrl+Shift+E')
       }
 
       return
@@ -522,6 +523,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
           event.preventDefault()
 
           this.cancelPrint()
+          this.recordShortcutUsed('Shift+C')
         }
         break
 
@@ -530,6 +532,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
           event.preventDefault()
 
           this.pausePrint()
+          this.recordShortcutUsed('Shift+P')
         }
         break
 
@@ -538,9 +541,15 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
           event.preventDefault()
 
           this.homeAll()
+          this.recordShortcutUsed('Shift+H')
         }
         break
     }
+  }
+
+  recordShortcutUsed (shortcut: string) {
+    Promise.resolve(this.$typedDispatch('achievements/onKeyboardShortcutUsed', shortcut, { root: true }))
+      .catch(() => undefined)
   }
 }
 </script>

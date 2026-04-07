@@ -1,5 +1,6 @@
 <template>
   <collapsable-card
+    v-if="isOwner"
     :title="$t('app.general.title.console')"
     icon="$console"
     :help-tooltip="$t('app.console.tooltip.help')"
@@ -128,16 +129,17 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop, Watch, Ref } from 'vue-property-decorator'
+import { Component, Prop, Watch, Ref, Mixins } from 'vue-property-decorator'
 import Console from './Console.vue'
 import type { ConsoleEntry, ConsoleFilter } from '@/store/console/types'
+import AuthMixin from '@/mixins/auth'
 
 @Component({
   components: {
     Console
   }
 })
-export default class ConsoleCard extends Vue {
+export default class ConsoleCard extends Mixins(AuthMixin) {
   @Prop({ type: Boolean })
   readonly fullscreen?: boolean
 

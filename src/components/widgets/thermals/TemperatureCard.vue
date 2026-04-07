@@ -234,6 +234,8 @@ export default class TemperatureCard extends Mixins(StateMixin, BrowserMixin) {
       if (preset.gcode) {
         this.sendGcode(preset.gcode)
       }
+
+      this.$typedDispatch('achievements/onPresetActivated', undefined, { root: true })
     }
   }
 

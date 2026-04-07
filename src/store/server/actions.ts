@@ -82,12 +82,19 @@ export const actions = {
     SocketActions.machineProcStats()
     SocketActions.machineSystemInfo()
 
+    const prevKlippyReady = state.info.klippy_connected === true && state.info.klippy_state === 'ready'
+
     const klippyConnectedNow = (
       payload.klippy_connected &&
       !state.info.klippy_connected
     )
 
     commit('setServerInfo', payload)
+
+    const nextKlippyReady = payload.klippy_connected === true && payload.klippy_state === 'ready'
+    Promise.resolve(
+      dispatch('achievements/onKlippyReadyChanged', { prevReady: prevKlippyReady, nextReady: nextKlippyReady }, { root: true })
+    ).catch(() => undefined)
 
     dispatch('checkMoonrakerMinVersion')
 

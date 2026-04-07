@@ -79,9 +79,17 @@ export default class AppNavItem extends Mixins(StateMixin, BrowserMixin) {
       !eventTargetIsContentEditable(event) &&
       this.$route.name !== this.to
     ) {
+      if (
+        (this.to === 'console' || this.to === 'settings') &&
+        !this.$typedGetters['auth/hasMinRole']('owner')
+      ) {
+        return
+      }
+
       event.preventDefault()
 
       this.$router.push({ name: this.to })
+      this.$typedDispatch('achievements/onKeyboardShortcutUsed', shortcut, { root: true })
     }
   }
 

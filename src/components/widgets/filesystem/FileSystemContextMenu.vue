@@ -143,7 +143,7 @@
             </v-list-item>
 
             <v-list-item
-              v-if="!Array.isArray(file) && !rootProperties.readonly"
+              v-if="!Array.isArray(file) && !rootProperties.readonly && !lockMutations"
               @click="$emit('rename', file)"
             >
               <v-list-item-icon>
@@ -155,7 +155,7 @@
             </v-list-item>
 
             <v-list-item
-              v-if="!Array.isArray(file) && !rootProperties.readonly"
+              v-if="!Array.isArray(file) && !rootProperties.readonly && !lockMutations"
               @click="$emit('duplicate', file)"
             >
               <v-list-item-icon>
@@ -167,7 +167,7 @@
             </v-list-item>
 
             <v-list-item
-              v-if="!rootProperties.readonly"
+              v-if="!rootProperties.readonly && !lockMutations"
               @click="$emit('remove', file)"
             >
               <v-list-item-icon>
@@ -227,6 +227,9 @@ export default class FileSystemContextMenu extends Mixins(StateMixin, FilesMixin
   @Prop({ type: Number, required: true })
   readonly positionY!: number
 
+  @Prop({ type: Boolean })
+  readonly lockMutations?: boolean
+
   get rootProperties (): RootProperties {
     return this.$typedGetters['files/getRootProperties'](this.root)
   }
@@ -242,6 +245,7 @@ export default class FileSystemContextMenu extends Mixins(StateMixin, FilesMixin
 
   get canEdit () {
     return (
+      this.lockMutations !== true &&
       !Array.isArray(this.file) &&
       this.file.type !== 'directory' &&
       (
@@ -291,6 +295,7 @@ export default class FileSystemContextMenu extends Mixins(StateMixin, FilesMixin
 
   get canCreateZip (): boolean {
     return (
+      this.lockMutations !== true &&
       (
         Array.isArray(this.file) ||
         this.file.type !== 'file' ||

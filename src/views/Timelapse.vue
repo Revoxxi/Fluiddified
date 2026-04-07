@@ -22,18 +22,20 @@
       md="4"
     >
       <timelapse-status-card
+        v-if="isOwner"
         class="mb-2 mb-md-4"
         @openRenderDialog="openRenderDialog"
       />
 
       <timelapse-settings-card
+        v-if="isOwner"
         class="mb-2 mb-md-4"
         @openRenderDialog="openRenderDialog"
       />
     </v-col>
 
     <timelapse-render-settings-dialog
-      v-if="renderDialogOpen"
+      v-if="isOwner && renderDialogOpen"
       v-model="renderDialogOpen"
       :renderable="renderDialogRenderable"
     />
@@ -43,6 +45,7 @@
 <script lang="ts">
 import { Component, Mixins } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import FileSystem from '@/components/widgets/filesystem/FileSystem.vue'
 import TimelapseStatusCard from '@/components/widgets/timelapse/TimelapseStatusCard.vue'
 import TimelapseSettingsCard from '@/components/widgets/timelapse/TimelapseSettingsCard.vue'
@@ -56,7 +59,7 @@ import TimelapseRenderSettingsDialog from '@/components/widgets/timelapse/Timela
     TimelapseSettingsCard
   }
 })
-export default class Timelapse extends Mixins(StateMixin) {
+export default class Timelapse extends Mixins(StateMixin, AuthMixin) {
   renderDialogOpen = false
   renderDialogRenderable = false
 

@@ -90,8 +90,12 @@ export const actions = {
   /**
    * Inits any local storage state we may have.
    */
-  async initLocal ({ commit }, payload: InitConfig) {
+  async initLocal ({ commit, dispatch, state }, payload: InitConfig) {
     commit('setInitInstances', payload) // Loads instances from local storage, and also inits the current instance.
+
+    if (state.instances.length >= 2) {
+      dispatch('achievements/onMultiPrinterFleet', undefined, { root: true })
+    }
   },
 
   /**
@@ -213,5 +217,8 @@ export const actions = {
       value: updatedTheme,
       server: true
     })
+
+    const themeKey = `${updatedTheme.isDark ? 'dark' : 'light'}:${updatedTheme.color}`
+    dispatch('achievements/onThemeChange', themeKey, { root: true })
   }
 } satisfies ActionTree<ConfigState, RootState>

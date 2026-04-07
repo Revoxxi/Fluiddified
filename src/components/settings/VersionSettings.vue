@@ -180,6 +180,7 @@ import VersionCommitHistoryDialog from './VersionInformationDialog.vue'
 import StateMixin from '@/mixins/state'
 import { SocketActions } from '@/api/socketActions'
 import type { VersionInfo } from '@/store/version/types'
+import { getGithubRepoBaseUrl } from '@/util/versionGithubBaseUrl'
 
 @Component({
   components: {
@@ -292,13 +293,7 @@ export default class VersionSettings extends Mixins(StateMixin) {
   }
 
   getBaseUrl (component: VersionInfo) {
-    if ('remote_url' in component && component.remote_url) {
-      return component.remote_url
-    }
-    if ('owner' in component) {
-      return `https://github.com/${component.owner}/${component.repo_name || component.name}`
-    }
-    return ''
+    return getGithubRepoBaseUrl(component)
   }
 
   handleInformationDialog (component: VersionInfo) {

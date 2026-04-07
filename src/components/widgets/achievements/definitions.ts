@@ -132,7 +132,7 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'first_cancel',
     name: 'Knowing When to Fold',
-    description: 'Cancel a print for the first time',
+    description: 'User-cancel a print for the first time (failed/error jobs do not count)',
     icon: '$star',
     category: 'characteristics',
     rarity: 'common',
@@ -446,7 +446,7 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'speed_test',
     name: 'Speed Racer',
-    description: 'Run a speed/acceleration test macro',
+    description: 'Run accelerometer / resonance sampling (e.g. ACCELEROMETER_QUERY)',
     icon: '$fire',
     category: 'klipper',
     rarity: 'rare',
@@ -507,7 +507,7 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'first_macro',
     name: 'Script Kiddie',
-    description: 'Run your first macro',
+    description: 'Successfully run your first user-configured G-code macro',
     icon: '$console',
     category: 'exploration',
     rarity: 'common',
@@ -516,7 +516,7 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'macro_variety',
     name: 'Macro Maestro',
-    description: 'Run many different macros',
+    description: 'Successfully run N distinct user-configured G-code macros',
     icon: '$console',
     category: 'exploration',
     rarity: 'uncommon',
@@ -572,7 +572,7 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'console_explorer',
     name: 'Terminal Wizard',
-    description: 'Send many console commands',
+    description: 'Successfully run N G-code scripts (Klipper accepted the command)',
     icon: '$console',
     category: 'exploration',
     rarity: 'uncommon',
@@ -592,11 +592,21 @@ export const achievementDefinitions: AchievementDefinition[] = [
   {
     id: 'multi_instance',
     name: 'Fleet Commander',
-    description: 'Add multiple printer instances',
+    description: 'Connect with two or more saved printer instances',
     icon: '$cog',
     category: 'exploration',
     rarity: 'rare',
     points: 50
+  },
+  {
+    id: 'community_plugin',
+    name: 'Plugin Pioneer',
+    description: 'Install a community widget from a plugin ZIP',
+    icon: '$cog',
+    category: 'exploration',
+    rarity: 'rare',
+    points: 50,
+    unlockMessage: 'Your dashboard just grew a new capability!'
   },
   {
     id: 'keyboard_shortcuts',
@@ -605,7 +615,9 @@ export const achievementDefinitions: AchievementDefinition[] = [
     icon: '$cog',
     category: 'exploration',
     rarity: 'uncommon',
-    points: 25
+    points: 25,
+    tiers: [5],
+    unit: 'shortcuts'
   },
   {
     id: 'fullscreen_mode',

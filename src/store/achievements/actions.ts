@@ -5,6 +5,7 @@ import type { HistoryItem } from '../history/types'
 import { SocketActions } from '@/api/socketActions'
 import { EventBus } from '@/eventBus'
 import { achievementDefinitions } from '@/components/widgets/achievements/definitions'
+import { resolveUserVisibleMacroName } from '@/store/achievements/gcodeMacros'
 
 const rarityPoints: Record<string, number> = {
   common: 10,
@@ -38,12 +39,75 @@ function formatDuration (seconds: number): string {
   return `${h}${String(m).padStart(2, '0')}${String(s).padStart(2, '0')}`
 }
 
+/** First executable line (skip blanks and ; comments) for multi-line console scripts. */
+function firstExecutableGcodeLine (script: string): string {
+  const lines = script.split(/\r?\n/)
+  for (const raw of lines) {
+    const line = raw.trim()
+    if (line.length === 0) continue
+    if (line.startsWith(';')) continue
+    return line
+  }
+  return ''
+}
+
 function countPrintsOnDay (jobs: Array<{ status: string, end_time?: number | string | null }>, dateKey: string): number {
   return jobs.filter(j =>
     j.status === 'completed' &&
     j.end_time != null &&
     getDateKey(typeof j.end_time === 'string' ? parseFloat(j.end_time) : j.end_time) === dateKey
   ).length
+}
+
+/** Monday-anchored calendar week (local), for “active week” streaks */
+function getWeekAnchorDateKey (tsSec: number): string {
+  const d = new Date(tsSec * 1000)
+  const day = d.getDay()
+  const mondayOffset = day === 0 ? -6 : 1 - day
+  const mon = new Date(d)
+  mon.setDate(mon.getDate() + mondayOffset)
+  return getDateKey(mon.getTime() / 1000)
+}
+
+function gramsFromCompletedJob (job: HistoryItem): number {
+  const w = job.metadata?.filament_weight_total
+  return typeof w === 'number' && w > 0 ? w : 0
+}
+
+/** @returns null if fewer than 50 finished jobs (completed / cancelled / error) */
+function computeSuccessRatePercent (jobs: Array<{ status: string }>): number | null {
+  const finished = jobs.filter(j =>
+    j.status === 'completed' ||
+    j.status === 'cancelled' ||
+    j.status === 'error'
+  )
+  if (finished.length < 50) return null
+  const completed = finished.filter(j => j.status === 'completed').length
+  return (completed / finished.length) * 100
+}
+
+function thanksgivingUs (year: number): { month: number, day: number } {
+  const nov1 = new Date(year, 10, 1)
+  const dow = nov1.getDay()
+  const firstThuOffset = (4 - dow + 7) % 7
+  const day = 1 + firstThuOffset + 21
+  return { month: 10, day }
+}
+
+function isMajorHoliday (tsSec: number): boolean {
+  const d = new Date(tsSec * 1000)
+  const m = d.getMonth()
+  const day = d.getDate()
+  const y = d.getFullYear()
+  if (m === 0 && day === 1) return true
+  if (m === 6 && day === 4) return true
+  if (m === 11 && day === 25) return true
+  if (m === 9 && day === 31) return true
+  if (m === 1 && day === 14) return true
+  if (m === 2 && day === 17) return true
+  const tg = thanksgivingUs(y)
+  if (m === tg.month && day === tg.day) return true
+  return false
 }
 
 export const actions = {
@@ -152,7 +216,7 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onPrintComplete ({ state, commit, dispatch, rootState }, job: HistoryItem) {
+  async onPrintComplete ({ state, commit, dispatch, rootState, rootGetters }, job: HistoryItem) {
     if (!state.enabled) return
 
     const totals = rootState.history?.job_totals
@@ -181,7 +245,24 @@ export const actions = {
     }
 
     if (isCompleted) {
+      const grams = gramsFromCompletedJob(job)
+      if (grams > 0) {
+        const totalW = state.stats.totalPrintWeightGrams + grams
+        commit('updateStat', { key: 'totalPrintWeightGrams', value: totalW })
+        await dispatch('unlockAchievement', {
+          id: 'print_weight',
+          value: totalW
+        })
+      }
+    }
+
+    if (isCompleted) {
       await dispatch('unlockAchievement', { id: 'first_print' })
+
+      const extruders = rootGetters['printer/getExtruders'] as Array<{ name?: string }>
+      if (extruders.length >= 2) {
+        await dispatch('unlockAchievement', { id: 'multi_extruder' })
+      }
 
       if (duration < 300) {
         await dispatch('unlockAchievement', { id: 'speed_demon' })
@@ -232,7 +313,7 @@ export const actions = {
       }
     }
 
-    if (isFailed) {
+    if (job.status === 'cancelled') {
       await dispatch('unlockAchievement', { id: 'first_cancel' })
     }
 
@@ -347,16 +428,106 @@ export const actions = {
       }
     }
 
+    if (isCompleted && endTime > 0) {
+      const wk = getWeekAnchorDateKey(endTime)
+      if (!state.stats.weeksWithPrint.includes(wk)) {
+        const wup = [...state.stats.weeksWithPrint, wk]
+        commit('updateStat', { key: 'weeksWithPrint', value: wup })
+        await dispatch('unlockAchievement', {
+          id: 'weekly_active',
+          value: wup.length
+        })
+      }
+    }
+
+    if (isCompleted || isFailed) {
+      const rate = computeSuccessRatePercent(rootState.history?.jobs ?? [])
+      if (rate != null) {
+        await dispatch('unlockAchievement', {
+          id: 'success_rate',
+          value: rate
+        })
+      }
+    }
+
+    const holidayTs = endTime > 0 ? endTime : startTime
+    if (isCompleted && holidayTs > 0 && isMajorHoliday(holidayTs)) {
+      await dispatch('unlockAchievement', { id: 'holiday_printer' })
+    }
+
+    await dispatch('recomputeUptimeAchievement')
+
     commit('updateStat', { key: 'lastPrintEndTime', value: endTime || Date.now() / 1000 })
     commit('updateStat', { key: 'lastPrintDate', value: nowKey })
     await dispatch('saveToDb')
   },
 
-  async onCommandSent ({ state, commit, dispatch }, command: string) {
+  /**
+   * Klipper “ready” connection time toward `uptime_champion`. Call after prints too so
+   * long sessions advance tiers without waiting for disconnect.
+   */
+  async recomputeUptimeAchievement ({ state, dispatch }) {
+    if (!state.enabled) return
+    const live = state.stats.uptimeSessionStartMs != null
+      ? Date.now() - state.stats.uptimeSessionStartMs
+      : 0
+    const hours = (state.stats.uptimeMs + live) / 3600000
+    await dispatch('unlockAchievement', {
+      id: 'uptime_champion',
+      value: hours
+    })
+  },
+
+  async onKlippyReadyChanged ({ state, commit, dispatch }, payload: { prevReady: boolean, nextReady: boolean }) {
     if (!state.enabled) return
 
-    const trimmed = command.trim().toUpperCase()
-    if (!trimmed) return
+    const now = Date.now()
+    if (payload.prevReady && !payload.nextReady) {
+      const start = state.stats.uptimeSessionStartMs
+      if (start != null && start > 0) {
+        commit('updateStat', {
+          key: 'uptimeMs',
+          value: state.stats.uptimeMs + (now - start)
+        })
+      }
+      commit('updateStat', { key: 'uptimeSessionStartMs', value: null })
+    } else if (!payload.prevReady && payload.nextReady) {
+      commit('updateStat', { key: 'uptimeSessionStartMs', value: now })
+    }
+
+    if (payload.prevReady !== payload.nextReady) {
+      await dispatch('recomputeUptimeAchievement')
+      await dispatch('saveToDb')
+    }
+  },
+
+  async onConfigFileSaved ({ state, dispatch }, payload: { root: string, filename: string, contents: string }) {
+    if (!state.enabled) return
+    if (payload.root !== 'config' || !payload.filename.endsWith('.cfg')) return
+    if (/\[gcode_macro\b/i.test(payload.contents)) {
+      await dispatch('unlockAchievement', { id: 'macro_creator' })
+    }
+    await dispatch('saveToDb')
+  },
+
+  async onDatabaseBackupCreated ({ state, dispatch }) {
+    if (!state.enabled) return
+    await dispatch('unlockAchievement', { id: 'config_backup' })
+    await dispatch('saveToDb')
+  },
+
+  /**
+   * printer.gcode.script returned ok — Klipper accepted the script. Used for fair
+   * macro / calibration / console achievement tracking (failed commands do not count).
+   */
+  async onGcodeScriptOk ({ state, rootState, commit, dispatch }, script: string) {
+    if (!state.enabled) return
+
+    const line = firstExecutableGcodeLine(script)
+    if (!line) return
+
+    const trimmed = line.toUpperCase()
+    const baseName = trimmed.split(/\s+/)[0]
 
     const newCount = state.stats.commandsSentCount + 1
     commit('updateStat', { key: 'commandsSentCount', value: newCount })
@@ -369,17 +540,19 @@ export const actions = {
       BED_MESH_CALIBRATE: 'first_mesh',
       SHAPER_CALIBRATE: 'input_shaper',
       TEST_RESONANCES: 'input_shaper',
+      ACCELEROMETER_QUERY: 'speed_test',
       SET_PRESSURE_ADVANCE: 'pressure_advance',
       PID_CALIBRATE: 'pid_tuned',
+      MPC_CALIBRATE: 'pid_tuned',
       SET_RETRACTION: 'firmware_retract',
       EXCLUDE_OBJECT: 'exclude_object',
       PROBE_ACCURACY: 'probe_accuracy',
       QUERY_ENDSTOPS: 'endstop_check',
       FIRMWARE_RESTART: 'klipper_restart',
-      SAVE_CONFIG: 'save_config'
+      SAVE_CONFIG: 'save_config',
+      Z_OFFSET_APPLY_PROBE: 'z_offset_save',
+      Z_OFFSET_APPLY_ENDSTOP: 'z_offset_save'
     }
-
-    const baseName = trimmed.split(' ')[0]
 
     for (const [cmd, achievementId] of Object.entries(cmdMap)) {
       if (baseName === cmd) {
@@ -414,8 +587,8 @@ export const actions = {
       })
     }
 
-    const macroName = baseName
-    if (macroName && !macroName.startsWith('G') && !macroName.startsWith('M') && !macroName.startsWith('T')) {
+    const macroName = resolveUserVisibleMacroName(rootState, baseName)
+    if (macroName != null) {
       if (!state.stats.distinctMacrosRun.includes(macroName)) {
         const updated = [...state.stats.distinctMacrosRun, macroName]
         commit('updateStat', { key: 'distinctMacrosRun', value: updated })
@@ -429,6 +602,18 @@ export const actions = {
       }
     }
 
+    await dispatch('saveToDb')
+  },
+
+  async onMultiPrinterFleet ({ state, dispatch }) {
+    if (!state.enabled) return
+    await dispatch('unlockAchievement', { id: 'multi_instance' })
+    await dispatch('saveToDb')
+  },
+
+  async onPluginZipInstalled ({ state, dispatch }) {
+    if (!state.enabled) return
+    await dispatch('unlockAchievement', { id: 'community_plugin' })
     await dispatch('saveToDb')
   },
 
@@ -472,6 +657,23 @@ export const actions = {
     if (newCount >= 10) {
       await dispatch('unlockAchievement', { id: 'preheat_master' })
     }
+
+    await dispatch('saveToDb')
+  },
+
+  async onKeyboardShortcutUsed ({ state, commit, dispatch }, shortcut: string) {
+    if (!state.enabled || !shortcut) return
+
+    if (state.stats.shortcutsUsed.includes(shortcut)) {
+      return
+    }
+
+    const updated = [...state.stats.shortcutsUsed, shortcut]
+    commit('updateStat', { key: 'shortcutsUsed', value: updated })
+    await dispatch('unlockAchievement', {
+      id: 'keyboard_shortcuts',
+      value: updated.length
+    })
 
     await dispatch('saveToDb')
   },
@@ -532,13 +734,13 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async retroactiveScan ({ state, rootState, dispatch }) {
+  async retroactiveScan ({ state, rootState, commit, dispatch }) {
     if (!state.enabled) return
 
     const jobs = rootState.history?.jobs ?? []
     const totals = (rootState.history as any)?.job_totals
 
-    const completedJobs = jobs.filter((j: any) => j.status === 'completed')
+    const completedJobs = jobs.filter((j: any) => j.status === 'completed') as HistoryItem[]
     const totalCompleted = totals?.total_jobs ?? completedJobs.length
 
     if (totalCompleted > 0) {
@@ -556,12 +758,53 @@ export const actions = {
       await dispatch('unlockAchievement', { id: 'filament_used', value: totalFilamentM })
     }
 
+    let weightSum = 0
+    const weekKeySet = new Set<string>()
+    for (const job of completedJobs) {
+      weightSum += gramsFromCompletedJob(job)
+      const et = (job as HistoryItem).end_time
+      if (et != null) {
+        const t = typeof et === 'string' ? parseFloat(et) : et
+        if (t > 0) weekKeySet.add(getWeekAnchorDateKey(t))
+      }
+    }
+    if (weightSum > 0) {
+      commit('updateStat', { key: 'totalPrintWeightGrams', value: weightSum })
+      await dispatch('unlockAchievement', { id: 'print_weight', value: weightSum })
+    }
+    if (weekKeySet.size > 0) {
+      commit('updateStat', { key: 'weeksWithPrint', value: [...weekKeySet] })
+      await dispatch('unlockAchievement', { id: 'weekly_active', value: weekKeySet.size })
+    }
+
+    const rateAll = computeSuccessRatePercent(jobs as Array<{ status: string }>)
+    if (rateAll != null) {
+      await dispatch('unlockAchievement', { id: 'success_rate', value: rateAll })
+    }
+
+    for (const job of completedJobs) {
+      const ji = job as HistoryItem
+      const st = ji.start_time ?? 0
+      let et = 0
+      if (ji.end_time != null) {
+        et = typeof ji.end_time === 'string' ? parseFloat(ji.end_time) : ji.end_time
+      }
+      if ((st > 0 && isMajorHoliday(st)) || (et > 0 && isMajorHoliday(et))) {
+        await dispatch('unlockAchievement', { id: 'holiday_printer' })
+        break
+      }
+    }
+
+    await dispatch('recomputeUptimeAchievement')
+
+    const cancelledJobs = jobs.filter((j: any) => j.status === 'cancelled')
+    if (cancelledJobs.length > 0) {
+      await dispatch('unlockAchievement', { id: 'first_cancel' })
+    }
+
     const failedJobs = jobs.filter((j: any) =>
       j.status === 'cancelled' || j.status === 'error'
     )
-    if (failedJobs.length > 0) {
-      await dispatch('unlockAchievement', { id: 'first_cancel' })
-    }
     if (failedJobs.length >= 50) {
       await dispatch('unlockAchievement', { id: 'five_hundred_errors' })
     }

@@ -66,6 +66,7 @@ export const actions = {
     commit('clearLoadError', '__zip_install__')
     commit('setRegistered', pluginRegistry.getAll().map(m => m.id))
     await dispatch('layout/appendRegisteredPluginToDashboards', result.id, { root: true })
+    await dispatch('achievements/onPluginZipInstalled', undefined, { root: true })
     return result
   }
 } satisfies ActionTree<PluginsState, RootState>

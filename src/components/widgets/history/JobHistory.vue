@@ -132,6 +132,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import JobHistoryItemStatus from './JobHistoryItemStatus.vue'
 import FilesMixin from '@/mixins/files'
+import AuthMixin from '@/mixins/auth'
 import getFilePaths from '@/util/get-file-paths'
 import type { HistoryItem } from '@/store/history/types'
 import { SocketActions } from '@/api/socketActions'
@@ -144,7 +145,7 @@ import type { DefaultGetterFunction } from '@/components/ui/AppDataTableRow.vue'
     JobHistoryItemStatus
   }
 })
-export default class JobHistory extends Mixins(FilesMixin) {
+export default class JobHistory extends Mixins(FilesMixin, AuthMixin) {
   search = ''
 
   get auxiliaryDataHeaders (): AppDataTableHeader[] {
@@ -392,7 +393,7 @@ export default class JobHistory extends Mixins(FilesMixin) {
   }
 
   get headers (): DataTableHeader[] {
-    return [
+    const headers: DataTableHeader[] = [
       {
         text: '',
         value: 'data-table-icons',
@@ -404,14 +405,19 @@ export default class JobHistory extends Mixins(FilesMixin) {
         value: 'filename'
       },
       ...this.configurableHeaders
-        .filter(header => header.visible !== false),
-      {
+        .filter(header => header.visible !== false)
+    ]
+
+    if (this.isOwner) {
+      headers.push({
         text: this.$tc('app.general.table.header.actions'),
         value: 'actions',
         sortable: false,
         align: 'end'
-      }
-    ]
+      })
+    }
+
+    return headers
   }
 
   get thumbnailSize (): number {
@@ -435,6 +441,8 @@ export default class JobHistory extends Mixins(FilesMixin) {
   }
 
   async handleRemoveJob (job: HistoryItem) {
+    if (!this.isOwner) return
+
     const result = await this.$confirm(
       this.$tc('app.general.simple_form.msg.confirm_delete', 1),
       { title: this.$tc('app.general.label.confirm'), color: 'card-heading', icon: '$error' }

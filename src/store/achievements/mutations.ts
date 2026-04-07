@@ -35,7 +35,9 @@ export const mutations = {
 
   initFromDb (state, payload: Partial<AchievementsState>) {
     if (payload.progress != null) state.progress = payload.progress
-    if (payload.stats != null) state.stats = payload.stats
+    if (payload.stats != null) {
+      state.stats = { ...defaultState().stats, ...payload.stats }
+    }
     if (payload.totalPoints != null) state.totalPoints = payload.totalPoints
     if (payload.enabled != null) state.enabled = payload.enabled
     if (payload.notificationsEnabled != null) state.notificationsEnabled = payload.notificationsEnabled
