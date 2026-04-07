@@ -20,7 +20,9 @@ export const getters = {
     }
     const sole = soleMoonrakerUsername(state)
     if (sole === username) return 'owner'
-    return 'guest'
+    // Multi-user host with no stored row yet: default to operator, not spectator — otherwise
+    // legitimate logins look like `guest` and lose tool controls until DB hydrates.
+    return 'user'
   },
 
   getCurrentRole: (state, getters): Role => {
