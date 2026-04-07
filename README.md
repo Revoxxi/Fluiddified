@@ -12,7 +12,7 @@ Fluiddified extends Fluidd with:
 - **Role-Based Access Control** — owner / user / guest roles with granular permissions
 - **Achievement System** — achievements with progression tracking
 - **Built-in Proxy Server** — single-port internet exposure with server-side auth enforcement
-- **Rebranded UI** — distinct identity while preserving upstream lineage
+- **UI tweaks** — while preserving upstream lineage
 
 ## Features
 
