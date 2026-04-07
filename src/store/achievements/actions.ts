@@ -1,9 +1,13 @@
+import Vue from 'vue'
 import type { ActionTree } from 'vuex'
 import type { AchievementsState } from './types'
 import type { RootState } from '../types'
 import type { HistoryItem } from '../history/types'
+import type { CalibrationExtruderMode } from '@/types/achievement'
+import { CALIBRATION_GUIDE_ACHIEVEMENT_ID } from '@/components/widgets/achievements/calibrationGuideAchievement'
 import { SocketActions } from '@/api/socketActions'
 import { EventBus } from '@/eventBus'
+import { consola } from 'consola'
 import { achievementDefinitions } from '@/components/widgets/achievements/definitions'
 import { resolveUserVisibleMacroName } from '@/store/achievements/gcodeMacros'
 
@@ -146,14 +150,28 @@ export const actions = {
     }
   },
 
-  async saveToDb ({ state }) {
-    SocketActions.serverDatabasePostItem('achievements', {
-      progress: state.progress,
-      stats: state.stats,
-      totalPoints: state.totalPoints,
-      enabled: state.enabled,
-      notificationsEnabled: state.notificationsEnabled
-    })
+  /**
+   * Persist achievements to Moonraker DB. Skips when role is guest or session cannot
+   * use server.database.post_item (user+). Avoids errors on first paint before JWT/roles hydrate.
+   */
+  async saveToDb ({ state, rootGetters }) {
+    if (!rootGetters['auth/hasMinRole']('user')) {
+      return
+    }
+    if (!Vue.$socket) {
+      return
+    }
+    try {
+      await SocketActions.serverDatabasePostItem('achievements', {
+        progress: state.progress,
+        stats: state.stats,
+        totalPoints: state.totalPoints,
+        enabled: state.enabled,
+        notificationsEnabled: state.notificationsEnabled
+      })
+    } catch (e) {
+      consola.debug('[achievements] saveToDb failed or skipped', e)
+    }
   },
 
   async setEnabled ({ commit, dispatch }, enabled: boolean) {
@@ -195,6 +213,7 @@ export const actions = {
         commit('setProgress', {
           id: payload.id,
           progress: {
+            ...progress,
             current: currentValue,
             tierReached: newTier,
             unlockedAt: progress.unlockedAt ?? (unlocked ? now : undefined),
@@ -207,6 +226,7 @@ export const actions = {
       commit('setProgress', {
         id: payload.id,
         progress: {
+          ...progress,
           current: 1,
           tierReached: 1,
           unlockedAt: now
@@ -239,6 +259,65 @@ export const actions = {
     }
 
     await dispatch('saveToDb')
+  },
+
+  async setCalibrationExtruderMode (
+    { state, commit, dispatch },
+    payload: { id: string, mode: CalibrationExtruderMode }
+  ) {
+    if (!state.enabled) return
+    const def = achievementDefinitions.find(d => d.id === payload.id)
+    if (def?.calibrationGuide == null) return
+    const prev = state.progress[payload.id] ?? { current: 0, tierReached: 0 }
+    commit('setProgress', {
+      id: payload.id,
+      progress: {
+        ...prev,
+        calibrationExtruderMode: payload.mode
+      }
+    })
+    await dispatch('saveToDb')
+  },
+
+  /**
+   * Advance the calibration guide only on the current step and in order (G-code accepted by Klipper).
+   */
+  async onCalibrationGuideGcode ({ state, commit, dispatch }, baseName: string) {
+    if (!state.enabled) return
+    const def = achievementDefinitions.find(d => d.id === CALIBRATION_GUIDE_ACHIEVEMENT_ID)
+    if (def?.calibrationGuide == null) return
+
+    const steps = def.calibrationGuide.steps
+    const progress = state.progress[CALIBRATION_GUIDE_ACHIEVEMENT_ID] ?? { current: 0, tierReached: 0 }
+    if (progress.unlockedAt != null) return
+
+    const done = new Set(progress.calibrationStepsComplete ?? [])
+    let firstIncomplete = steps.length
+    for (let i = 0; i < steps.length; i++) {
+      if (!done.has(i)) {
+        firstIncomplete = i
+        break
+      }
+    }
+    if (firstIncomplete >= steps.length) return
+
+    const step = steps[firstIncomplete]
+    if (!step.triggerCommands.includes(baseName)) return
+
+    done.add(firstIncomplete)
+    const sorted = [...done].sort((a, b) => a - b)
+    commit('setProgress', {
+      id: CALIBRATION_GUIDE_ACHIEVEMENT_ID,
+      progress: {
+        ...progress,
+        calibrationStepsComplete: sorted,
+        current: sorted.length
+      }
+    })
+
+    if (sorted.length === steps.length) {
+      await dispatch('unlockAchievement', { id: CALIBRATION_GUIDE_ACHIEVEMENT_ID })
+    }
   },
 
   async onPrintComplete ({ state, commit, dispatch, rootState, rootGetters }, job: HistoryItem) {
@@ -650,6 +729,8 @@ export const actions = {
         })
       }
     }
+
+    await dispatch('onCalibrationGuideGcode', baseName)
 
     await dispatch('saveToDb')
   },

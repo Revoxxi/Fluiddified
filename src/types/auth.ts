@@ -27,6 +27,7 @@ export const Permissions = {
   FILE_UPLOAD: { id: 'file.upload', name: 'Upload Files', minRole: 'user' },
   FILE_DELETE: { id: 'file.delete', name: 'Delete Files', minRole: 'owner' },
   FILE_EDIT: { id: 'file.edit', name: 'Edit Config Files', minRole: 'owner' },
+  /** Read-only listing (e.g. dashboard jobs card); mutations still require upload/delete/edit. */
   FILE_VIEW: { id: 'file.view', name: 'View Files', minRole: 'guest' },
 
   PRINT_START: { id: 'print.start', name: 'Start Print', minRole: 'user' },
@@ -38,7 +39,7 @@ export const Permissions = {
   CONSOLE_SEND: { id: 'console.send', name: 'Send Console Commands', minRole: 'owner' },
   CONSOLE_VIEW: { id: 'console.view', name: 'View Console', minRole: 'owner' },
 
-  SYSTEM_RESTART: { id: 'system.restart', name: 'Restart Services', minRole: 'user' },
+  SYSTEM_RESTART: { id: 'system.restart', name: 'Restart Services', minRole: 'owner' },
   SYSTEM_UPDATE: { id: 'system.update', name: 'Update Software', minRole: 'owner' },
   SYSTEM_POWER: { id: 'system.power', name: 'Power Devices', minRole: 'owner' },
 

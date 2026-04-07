@@ -49,7 +49,10 @@
       </v-tooltip>
     </template>
 
-    <template #menu>
+    <template
+      v-if="!guestMode"
+      #menu
+    >
       <app-btn-collapse-group :collapsed="narrow">
         <app-btn
           v-if="isManualProbeActive"
@@ -151,7 +154,7 @@
       </app-btn-collapse-group>
     </template>
 
-    <toolhead />
+    <toolhead :guest-mode="guestMode" />
   </collapsable-card>
 </template>
 
@@ -176,9 +179,13 @@ type Tool = {
     Toolhead
   }
 })
-export default class ToolheadCard extends Mixins(StateMixin, ToolheadMixin) {
+export default class ToolheadCard extends Mixins(StateMixin, AuthMixin, ToolheadMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
+
+  get guestMode (): boolean {
+    return this.isGuest
+  }
 
   get klippyApp (): KlippyApp {
     return this.$typedGetters['printer/getKlippyApp']

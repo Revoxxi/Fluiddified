@@ -23,6 +23,12 @@
           {{ tierLabel }}
         </span>
       </v-list-item-title>
+      <v-list-item-subtitle
+        v-if="definition.calibrationGuide"
+        class="primary--text font-weight-medium"
+      >
+        Open for calibration guide
+      </v-list-item-subtitle>
       <v-list-item-subtitle>
         {{ displayDescription }}
       </v-list-item-subtitle>
@@ -107,10 +113,19 @@ export default class AchievementItem extends Vue {
 
   get showProgress (): boolean {
     if (this.definition.hidden && !this.isUnlocked) return false
+    if (this.definition.calibrationGuide && !this.isUnlocked) {
+      return true
+    }
     return !!(this.definition.tiers && this.progress && this.progress.current > 0)
   }
 
   get progressPercent (): number {
+    if (this.definition.calibrationGuide) {
+      const n = this.definition.calibrationGuide.steps.length
+      if (n === 0) return 0
+      const done = this.progress?.calibrationStepsComplete?.length ?? 0
+      return Math.min(100, (done / n) * 100)
+    }
     if (!this.definition.tiers || !this.progress) return 0
     const reached = this.progress.tierReached
     const tiers = this.definition.tiers

@@ -246,14 +246,14 @@
           />
         </g>
         <exclude-objects
-          v-if="showParts && showExcludeObjects"
+          v-if="showParts && showExcludeObjects && !isGuest"
           :shape-rendering="shapeRendering"
           @cancel="$emit('cancelObject', $event)"
         />
       </g>
     </svg>
     <div
-      v-if="file"
+      v-if="file && !isGuest"
       class="preview-options"
       @mousedown.stop=""
       @mouseup="keepFocus"
@@ -344,6 +344,7 @@
 import { Component, Mixins, Prop, Ref, Watch } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import BrowserMixin from '@/mixins/browser'
+import AuthMixin from '@/mixins/auth'
 import panzoom, { type PanZoom } from 'panzoom'
 import type { BBox, Layer, LayerPaths, Tool } from '@/store/gcodePreview/types'
 import type AppFocusableContainer from '@/components/ui/AppFocusableContainer.vue'
@@ -360,7 +361,7 @@ import type { BedSize } from '@/store/printer/types'
     GcodePreviewTool
   }
 })
-export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
+export default class GcodePreview extends Mixins(StateMixin, BrowserMixin, AuthMixin) {
   @Prop({ type: Boolean })
   readonly disabled?: boolean
 
@@ -419,6 +420,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set autoZoom (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.autoZoom',
       value,
@@ -433,6 +435,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set followProgress (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.followProgress',
       value,
@@ -445,6 +448,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showPreviousLayer (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showPreviousLayer',
       value,
@@ -457,6 +461,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showCurrentLayer (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showCurrentLayer',
       value,
@@ -469,6 +474,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showNextLayer (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showNextLayer',
       value,
@@ -481,6 +487,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showMoves (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showMoves',
       value,
@@ -493,6 +500,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showExtrusions (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showExtrusions',
       value,
@@ -505,6 +513,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showRetractions (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showRetractions',
       value,
@@ -517,6 +526,7 @@ export default class GcodePreview extends Mixins(StateMixin, BrowserMixin) {
   }
 
   set showParts (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.showParts',
       value,

@@ -3,10 +3,13 @@
     <v-toolbar dense>
       <v-spacer />
 
-      <app-thumbnail-size v-model="thumbnailSize" />
+      <app-thumbnail-size
+        v-if="!isGuest"
+        v-model="thumbnailSize"
+      />
 
       <app-column-picker
-        v-if="headers"
+        v-if="headers && !isGuest"
         key-name="history"
         :headers="configurableHeaders"
       />

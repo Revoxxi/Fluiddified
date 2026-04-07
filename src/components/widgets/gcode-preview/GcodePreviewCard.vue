@@ -144,6 +144,7 @@ import { Component, Mixins, Prop, Ref, Watch } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import FilesMixin from '@/mixins/files'
 import BrowserMixin from '@/mixins/browser'
+import AuthMixin from '@/mixins/auth'
 import GcodePreview from './GcodePreview.vue'
 import GcodePreviewParserProgressDialog from './GcodePreviewParserProgressDialog.vue'
 import type { AppFile, AppFileWithMeta } from '@/store/files/types'
@@ -158,7 +159,7 @@ import { encodeGcodeParamValue } from '@/util/gcode-helpers'
     GcodePreview
   }
 })
-export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, BrowserMixin) {
+export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, BrowserMixin, AuthMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
 
@@ -253,6 +254,7 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
   @Watch('fileLoaded')
   onFileLoaded () {
     if (
+      !this.isGuest &&
       this.fileLoaded &&
       this.$typedState.config.uiSettings.gcodePreview.autoFollowOnFileLoad &&
       this.printerFileLoaded
@@ -302,6 +304,7 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
   }
 
   set followProgress (value: boolean) {
+    if (this.isGuest) return
     this.$typedDispatch('config/saveByPath', {
       path: 'uiSettings.gcodePreview.followProgress',
       value,
@@ -405,6 +408,8 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
   }
 
   async cancelObject (id: string) {
+    if (!this.hasMinRole('user')) return
+
     const result = await this.$confirm(
       this.$tc('app.general.simple_form.msg.confirm_exclude_object'),
       { title: this.$tc('app.general.label.confirm'), color: 'card-heading', icon: '$error' }

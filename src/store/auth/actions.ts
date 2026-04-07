@@ -194,6 +194,12 @@ export const actions = {
         if (axios.isAxiosError(error) && error.code === 'ERR_NETWORK') {
           return { mode: 'login_prompt', loginRequired: lr }
         }
+        // With force_logins / untrusted clients, Moonraker returns 401 for this probe while
+        // accounts still exist — always use Fluidd login, not "create first user".
+        const status = axios.isAxiosError(error) ? error.response?.status : 0
+        if (status === 401 || status === 403) {
+          return { mode: 'account_exists', loginRequired: lr }
+        }
         if (info.trusted === true) {
           consola.debug(
             'access/users/list probe failed; trusted client — first-user registration on login page',

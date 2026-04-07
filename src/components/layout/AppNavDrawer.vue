@@ -55,6 +55,7 @@
           </app-nav-item>
 
           <app-nav-item
+            v-if="hasRouteAccess('user')"
             icon="$files"
             to="jobs"
           >

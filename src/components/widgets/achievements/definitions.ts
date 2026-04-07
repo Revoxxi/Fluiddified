@@ -1,6 +1,9 @@
 import type { AchievementDefinition } from '@/types/achievement'
+import { calibrationGuideAchievement } from './calibrationGuideAchievement'
 
 export const achievementDefinitions: AchievementDefinition[] = [
+  calibrationGuideAchievement,
+
   // ── Category 1: Volume (tiered, 7 tiers each) ──
 
   {

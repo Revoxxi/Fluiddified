@@ -59,13 +59,26 @@ function extractToken (req: FastifyRequest): string | null {
 
 const STATIC_EXT = /\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|map|webmanifest|json)(?:\?|$)/i
 
-const PUBLIC_PATHS = [
-  '/access/login',
-  '/access/refresh_jwt'
-]
+/**
+ * Require a valid Moonraker JWT (Fluidd session) only for proxied printer/API traffic.
+ * - `/access/*` is excluded so Fluidd's login page can call Moonraker's auth REST API
+ *   (info, user list, login, registration) without already holding that JWT.
+ * - The SPA document and static assets are excluded so the shell loads, then Vue sends
+ *   Bearer tokens on `/server`, `/printer`, etc.
+ */
+const PROTECTED_PATH_PREFIXES = [
+  '/server',
+  '/printer',
+  '/machine',
+  '/api',
+  '/webcam',
+  '/websocket'
+] as const
 
-function isPublicPath (url: string): boolean {
-  return PUBLIC_PATHS.some(p => url.startsWith(p))
+function requiresFluiddSessionJwt (path: string): boolean {
+  return PROTECTED_PATH_PREFIXES.some(
+    p => path === p || path.startsWith(`${p}/`)
+  )
 }
 
 const SET_PROXY_PATH = '/__fluiddified/set-proxy-backend'
@@ -78,14 +91,17 @@ export function authHook (config: ServerConfig) {
 
     if (path === SET_PROXY_PATH && req.method === 'POST') return
     if (path === '/health') return
-    if (isPublicPath(path)) return
     if (STATIC_EXT.test(path)) return
+
+    if (!requiresFluiddSessionJwt(path)) {
+      return
+    }
 
     const token = extractToken(req)
     if (!token) {
       const accept = req.headers.accept ?? ''
       if (accept.includes('text/html')) {
-        return reply.redirect('/#/login')
+        return reply.redirect('/#/login', 302)
       }
       return reply.status(401).send({ error: 'Authentication required' })
     }

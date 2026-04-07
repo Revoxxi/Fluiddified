@@ -282,10 +282,10 @@ export const appInit = async (apiConfig?: ApiConfig, hostConfig?: HostConfig): P
       store.commit('socket/setApiConnected', apiConnected)
     }
 
-    const hasJwt = !!store.state.auth.token
+    const loggedIn = store.getters['auth/uiSessionActive'] as boolean
 
-    // Always require a JWT to use the app; login page handles first-account (trusted) vs sign-in.
-    if (hasJwt && store.state.auth.authenticated) {
+    // Always require a Moonraker JWT from Fluidd login; never treat HTTP 200s without Bearer as logged in.
+    if (loggedIn) {
       if (router.currentRoute.name === 'login') {
         await router.push({ name: 'home' })
       }

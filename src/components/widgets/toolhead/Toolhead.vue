@@ -1,5 +1,5 @@
 <template>
-  <div>
+  <div :class="{ 'guest-toolhead-disabled': guestMode }">
     <v-card-text>
       <tool-change-commands />
 
@@ -43,7 +43,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator'
+import { Component, Mixins, Prop } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import ToolheadMixin from '@/mixins/toolhead'
 import ToolheadControlCross from './ToolheadControlCross.vue'
@@ -77,6 +77,9 @@ import type { ToolheadControlStyle } from '@/store/config/types'
   }
 })
 export default class Toolhead extends Mixins(StateMixin, ToolheadMixin) {
+  @Prop({ type: Boolean, default: false })
+  readonly guestMode!: boolean
+
   get showPressureAdvance (): boolean {
     return this.activeExtruder?.pressure_advance !== undefined
   }
@@ -91,5 +94,17 @@ export default class Toolhead extends Mixins(StateMixin, ToolheadMixin) {
   .controls-wrapper {
     min-width: 380px !important;
     max-width: 450px !important;
+  }
+
+  /* Guest role: block toolhead interactions (trusted LAN does not bypass Fluidd role). */
+  .guest-toolhead-disabled ::v-deep button,
+  .guest-toolhead-disabled ::v-deep .v-btn,
+  .guest-toolhead-disabled ::v-deep input,
+  .guest-toolhead-disabled ::v-deep textarea,
+  .guest-toolhead-disabled ::v-deep .v-slider,
+  .guest-toolhead-disabled ::v-deep .v-list-item,
+  .guest-toolhead-disabled ::v-deep .v-chip--clickable {
+    pointer-events: none;
+    opacity: 0.55;
   }
 </style>

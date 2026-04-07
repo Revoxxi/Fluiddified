@@ -13,9 +13,14 @@ export const getters = {
    * Stored Fluidd role for a Moonraker username, with sole-account always owner.
    */
   getRoleForUser: (state) => (username: string): Role => {
+    // Respect an explicit Fluidd role from the UI DB first (e.g. guest on a multi-user host).
+    // Sole-account default-owner applies only when there is no stored role for that user.
+    if (Object.prototype.hasOwnProperty.call(state.roles, username)) {
+      return state.roles[username]
+    }
     const sole = soleMoonrakerUsername(state)
     if (sole === username) return 'owner'
-    return state.roles[username] ?? 'guest'
+    return 'guest'
   },
 
   getCurrentRole: (state, getters): Role => {

@@ -14,6 +14,12 @@ export function getAchievementNextTarget (def: AchievementDefinition, progress?:
  * Substitutes placeholder N / N% in tiered achievement descriptions with the next target.
  */
 export function formatAchievementDescription (def: AchievementDefinition, progress?: AchievementProgress): string {
+  if (def.calibrationGuide) {
+    const n = def.calibrationGuide.steps.length
+    const done = progress?.calibrationStepsComplete?.length ?? 0
+    if (progress?.unlockedAt != null) return def.description
+    return `${def.description} — ${done}/${n} steps`
+  }
   if (!def.tiers?.length) return def.description
   const t = getAchievementNextTarget(def, progress)
   return def.description

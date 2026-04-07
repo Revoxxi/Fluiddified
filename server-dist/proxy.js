@@ -5,24 +5,8 @@ function moonrakerBase(req) {
     const b = req.proxyBackend;
     return `http://${b.moonrakerHost}:${b.moonrakerPort}`;
 }
-function applyMoonrakerServiceKeyHeaders(req, headers) {
-    const key = req.proxyBackend.moonrakerApiKey;
-    if (!key)
-        return headers;
-    const out = { ...headers };
-    for (const h of Object.keys(out)) {
-        if (h.toLowerCase() === 'authorization') {
-            delete out[h];
-        }
-    }
-    out['x-api-key'] = key;
-    return out;
-}
 async function forwardMoonraker(req, reply) {
-    const key = req.proxyBackend.moonrakerApiKey;
-    return reply.from(`${moonrakerBase(req)}${req.url}`, {
-        rewriteRequestHeaders: (_request, headers) => key ? applyMoonrakerServiceKeyHeaders(req, headers) : headers
-    });
+    return reply.from(`${moonrakerBase(req)}${req.url}`);
 }
 export function registerSetProxyBackendRoute(app, config) {
     app.post('/__fluiddified/set-proxy-backend', async (req, reply) => {
@@ -43,7 +27,7 @@ export function registerSetProxyBackendRoute(app, config) {
         return { ok: true };
     });
 }
-export async function registerProxyRoutes(app) {
+export async function registerProxyRoutes(app, _config) {
     await app.register(replyFrom);
     app.all('/access', forwardMoonraker);
     app.all('/access/*', forwardMoonraker);

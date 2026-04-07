@@ -67,6 +67,7 @@
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
 import type { AchievementCategory, AchievementDefinition, AchievementProgress } from '@/types/achievement'
+import { orderAchievementsForList } from '@/util/achievementSort'
 import { achievementDefinitions } from './definitions'
 import AchievementItem from './AchievementItem.vue'
 import AchievementDetailDialog from './AchievementDetailDialog.vue'
@@ -120,13 +121,9 @@ export default class AchievementsCard extends Vue {
 
   get filteredAchievements (): AchievementDefinition[] {
     const cat = this.categories[this.activeTab]?.value ?? null
-    let defs = achievementDefinitions
+    const ordered = orderAchievementsForList(achievementDefinitions, cat)
 
-    if (cat) {
-      defs = defs.filter(d => d.category === cat)
-    }
-
-    return defs.map(d => {
+    return ordered.map(d => {
       if (d.hidden && !this.isAchievementUnlocked(d)) {
         return { ...d }
       }

@@ -46,4 +46,19 @@ describe('achievementDisplay', () => {
     const p: AchievementProgress = { current: 0, tierReached: 0 }
     expect(formatAchievementDescription(rateDef, p)).toBe('Maintain 80% success rate over 50+ prints')
   })
+
+  it('calibration guide shows step fraction until unlocked', () => {
+    const guideDef: AchievementDefinition = {
+      id: 'g',
+      name: 'Guide',
+      description: 'Do the thing',
+      icon: '$cog',
+      category: 'klipper',
+      rarity: 'common',
+      points: 10,
+      calibrationGuide: { steps: [{ title: 'a', summary: '', docUrl: 'u', triggerCommands: ['X'], suggestedCommands: { direct: [], bowden: [] } }, { title: 'b', summary: '', docUrl: 'u', triggerCommands: ['Y'], suggestedCommands: { direct: [], bowden: [] } }] }
+    }
+    const p: AchievementProgress = { current: 1, tierReached: 0, calibrationStepsComplete: [0] }
+    expect(formatAchievementDescription(guideDef, p)).toBe('Do the thing — 1/2 steps')
+  })
 })

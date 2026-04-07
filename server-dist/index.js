@@ -9,13 +9,9 @@ import { authHook } from './auth';
 import { registerProxyRoutes, registerSetProxyBackendRoute } from './proxy';
 import { registerWsProxy } from './wsProxy';
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
-async function validateMoonrakerConfig(moonrakerHost, moonrakerPort, moonrakerApiKey) {
+async function validateMoonrakerConfig(moonrakerHost, moonrakerPort) {
     try {
-        const headers = {};
-        if (moonrakerApiKey) {
-            headers['X-Api-Key'] = moonrakerApiKey;
-        }
-        const res = await fetch(`http://${moonrakerHost}:${moonrakerPort}/server/config`, { headers });
+        const res = await fetch(`http://${moonrakerHost}:${moonrakerPort}/server/config`);
         const data = await res.json();
         const authConfig = data.result?.config?.authorization;
         if (!authConfig) {
@@ -68,8 +64,8 @@ async function start() {
         });
     });
     registerSetProxyBackendRoute(app, config);
-    registerWsProxy(app);
-    await registerProxyRoutes(app);
+    registerWsProxy(app, config);
+    await registerProxyRoutes(app, config);
     const distPath = path.join(__dirname, '..', 'dist');
     await app.register(fastifyStatic, {
         root: distPath,
@@ -95,13 +91,12 @@ async function start() {
         });
     }
     for (const b of config.instances) {
-        await validateMoonrakerConfig(b.moonrakerHost, b.moonrakerPort, b.moonrakerApiKey);
+        await validateMoonrakerConfig(b.moonrakerHost, b.moonrakerPort);
     }
     await app.listen({ port: config.port, host: '0.0.0.0' });
     console.log(`[server] Fluiddified proxy running on port ${config.port}`);
     for (const b of config.instances) {
         console.log(`[server] Backend ${b.id}: Moonraker ${b.moonrakerHost}:${b.moonrakerPort}` +
-            (b.moonrakerApiKey ? ', Moonraker service API key: set' : '') +
             (b.cameraEnabled ? `, camera ${b.cameraHost}:${b.cameraPort}` : ' (camera off)'));
     }
 }

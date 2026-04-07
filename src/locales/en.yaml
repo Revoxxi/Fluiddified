@@ -474,6 +474,9 @@ app:
         Click <b>Adjusted</b> if a significant adjustment is necessary on the current screw; otherwise, click <b>Accept</b> to continue.
       welcome_back: >-
         Welcome back.<br>Sign in below to stay in touch with your printer.
+      moonraker_signin_hint: >-
+        Sign in with your Moonraker username and password on this page. Fluiddified talks to Moonraker's
+        auth API here—you should not need a separate Moonraker web login screen.
       first_user_welcome: >-
         No Moonraker accounts exist yet. Create the first account (you will be
         assigned the owner role).

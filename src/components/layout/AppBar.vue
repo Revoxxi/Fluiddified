@@ -69,7 +69,7 @@
         </v-tooltip>
       </div>
 
-      <div v-if="socketConnected && uiSessionActive && showUploadAndPrint">
+      <div v-if="socketConnected && uiSessionActive && showUploadAndPrint && hasMinRole('user')">
         <app-upload-and-print-btn
           :disabled="printerPrinting || printerPaused || !klippyReady"
           @upload="handleUploadAndPrint"

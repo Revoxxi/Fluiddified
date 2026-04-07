@@ -5,8 +5,9 @@ import type { Role } from '@/types/auth'
 
 Vue.use(VueRouter)
 
+/** Logged-in Moonraker JWT session (Fluidd login); same as `auth/uiSessionActive`. */
 const isAuthenticated = (): boolean => {
-  return Boolean(store.state.auth.token && store.state.auth.authenticated)
+  return Boolean(store.getters['auth/uiSessionActive'])
 }
 
 const defaultRouteConfig: Partial<RouteConfig> = {
@@ -54,7 +55,7 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig,
     meta: {
       ...defaultRouteConfig.meta,
-      minRole: 'guest' as Role
+      minRole: 'user' as Role
     }
   },
   {
@@ -171,7 +172,7 @@ const routes: Array<RouteConfig> = [
     name: 'login',
     component: () => import('@/views/Login.vue'),
     beforeEnter: (to, from, next) => {
-      if (store.state.auth.token && store.state.auth.authenticated) {
+      if (store.getters['auth/uiSessionActive']) {
         next({ name: 'home' })
         return
       }

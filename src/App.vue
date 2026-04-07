@@ -478,6 +478,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
     if (
       this.socketConnected &&
       this.uiSessionActive &&
+      this.hasPermission(Permissions.FILE_UPLOAD) &&
       this.fileDropRoot &&
       event.dataTransfer &&
       hasFilesInDataTransfer(event.dataTransfer)
@@ -510,6 +511,10 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
       event.preventDefault()
 
       this.dragState = false
+
+      if (!this.hasPermission(Permissions.FILE_UPLOAD)) {
+        return
+      }
 
       if (event.dataTransfer) {
         const files = await getFilesFromDataTransfer(event.dataTransfer)
@@ -559,8 +564,8 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
     switch (shortcut) {
       case 'Shift+C':
         if (
-          this.printerPrinting ||
-          this.printerPaused
+          this.hasPermission(Permissions.PRINT_CANCEL) &&
+          (this.printerPrinting || this.printerPaused)
         ) {
           event.preventDefault()
 
@@ -570,7 +575,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
         break
 
       case 'Shift+P':
-        if (this.printerPrinting) {
+        if (this.hasPermission(Permissions.PRINT_PAUSE) && this.printerPrinting) {
           event.preventDefault()
 
           this.pausePrint()
@@ -579,7 +584,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
         break
 
       case 'Shift+H':
-        if (!this.printerPrinting) {
+        if (this.hasPermission(Permissions.PRINTER_HOME) && !this.printerPrinting) {
           event.preventDefault()
 
           this.homeAll()

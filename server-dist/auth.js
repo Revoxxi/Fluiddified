@@ -3,26 +3,22 @@ import { hasMinRole } from './roles';
 import { resolveProxyBackend } from './instanceRouting';
 const roleCache = new Map();
 const ROLE_CACHE_TTL = 30_000;
-export async function fetchRoles(host, port, moonrakerApiKey) {
-    const cacheKey = `${host}:${port}:${moonrakerApiKey ? '1' : '0'}`;
+export async function fetchRoles(host, port) {
+    const key = `${host}:${port}`;
     const now = Date.now();
-    const cached = roleCache.get(cacheKey);
+    const cached = roleCache.get(key);
     if (cached && now - cached.time < ROLE_CACHE_TTL) {
         return cached.roles;
     }
     try {
-        const headers = {};
-        if (moonrakerApiKey) {
-            headers['X-Api-Key'] = moonrakerApiKey;
-        }
-        const res = await fetch(`http://${host}:${port}/server/database/item?namespace=fluidd&key=auth`, { headers });
+        const res = await fetch(`http://${host}:${port}/server/database/item?namespace=fluidd&key=auth`);
         const data = await res.json();
         const roles = data.result?.value?.roles ?? {};
-        roleCache.set(cacheKey, { roles, time: now });
+        roleCache.set(key, { roles, time: now });
         return roles;
     }
     catch {
-        console.warn(`[auth] Could not fetch roles from Moonraker DB at ${host}:${port}`);
+        console.warn(`[auth] Could not fetch roles from Moonraker DB at ${key}`);
         return {};
     }
 }
@@ -37,12 +33,23 @@ function extractToken(req) {
     return url.searchParams.get('token');
 }
 const STATIC_EXT = /\.(?:js|css|png|jpg|jpeg|gif|svg|ico|woff2?|ttf|eot|map|webmanifest|json)(?:\?|$)/i;
-const PUBLIC_PATHS = [
-    '/access/login',
-    '/access/refresh_jwt'
+/**
+ * Require a valid Moonraker JWT (Fluidd session) only for proxied printer/API traffic.
+ * - `/access/*` is excluded so Fluidd's login page can call Moonraker's auth REST API
+ *   (info, user list, login, registration) without already holding that JWT.
+ * - The SPA document and static assets are excluded so the shell loads, then Vue sends
+ *   Bearer tokens on `/server`, `/printer`, etc.
+ */
+const PROTECTED_PATH_PREFIXES = [
+    '/server',
+    '/printer',
+    '/machine',
+    '/api',
+    '/webcam',
+    '/websocket'
 ];
-function isPublicPath(url) {
-    return PUBLIC_PATHS.some(p => url.startsWith(p));
+function requiresFluiddSessionJwt(path) {
+    return PROTECTED_PATH_PREFIXES.some(p => path === p || path.startsWith(`${p}/`));
 }
 const SET_PROXY_PATH = '/__fluiddified/set-proxy-backend';
 export function authHook(config) {
@@ -53,15 +60,16 @@ export function authHook(config) {
             return;
         if (path === '/health')
             return;
-        if (isPublicPath(path))
-            return;
         if (STATIC_EXT.test(path))
             return;
+        if (!requiresFluiddSessionJwt(path)) {
+            return;
+        }
         const token = extractToken(req);
         if (!token) {
             const accept = req.headers.accept ?? '';
             if (accept.includes('text/html')) {
-                return reply.redirect('/#/login');
+                return reply.redirect('/#/login', 302);
             }
             return reply.status(401).send({ error: 'Authentication required' });
         }
@@ -72,7 +80,7 @@ export function authHook(config) {
             }
             req.jwtUser = decoded;
             const b = req.proxyBackend;
-            const roles = await fetchRoles(b.moonrakerHost, b.moonrakerPort, b.moonrakerApiKey);
+            const roles = await fetchRoles(b.moonrakerHost, b.moonrakerPort);
             req.userRole = roles[decoded.username] ?? 'user';
         }
         catch {

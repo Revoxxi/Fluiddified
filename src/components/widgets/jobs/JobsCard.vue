@@ -9,7 +9,7 @@
   >
     <template #menu>
       <app-btn
-        v-if="!fullscreen"
+        v-if="!fullscreen && !guestMode"
         icon
         @click="$filters.routeTo({ name: 'jobs' })"
       >

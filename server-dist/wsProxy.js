@@ -1,14 +1,11 @@
 import WebSocket from 'ws';
 import { isGuestAllowedMessage } from './wsFilter';
-export function registerWsProxy(app) {
+export function registerWsProxy(app, _config) {
     app.get('/websocket', { websocket: true }, (socket, req) => {
         const role = req.userRole ?? 'guest';
         const b = req.proxyBackend;
         const moonrakerUrl = `ws://${b.moonrakerHost}:${b.moonrakerPort}/websocket`;
-        const key = b.moonrakerApiKey;
-        const upstream = key
-            ? new WebSocket(moonrakerUrl, { headers: { 'X-Api-Key': key } })
-            : new WebSocket(moonrakerUrl);
+        const upstream = new WebSocket(moonrakerUrl);
         upstream.on('open', () => {
             console.log(`[ws] Upstream ${b.id} (${b.moonrakerHost}:${b.moonrakerPort}) for ${req.jwtUser?.username ?? 'unknown'} (${role})`);
         });

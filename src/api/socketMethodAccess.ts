@@ -35,9 +35,9 @@ export const socketMethodMinRole: Record<string, Role> = {
   'printer.firmware_restart': 'owner',
   'printer.query_endstops.status': 'user',
 
-  'machine.services.restart': 'user',
-  'machine.services.start': 'user',
-  'machine.services.stop': 'user',
+  'machine.services.restart': 'owner',
+  'machine.services.start': 'owner',
+  'machine.services.stop': 'owner',
   'machine.reboot': 'owner',
   'machine.shutdown': 'owner',
   'machine.update.full': 'owner',
@@ -50,10 +50,10 @@ export const socketMethodMinRole: Record<string, Role> = {
   'machine.timelapse.post_settings': 'owner',
   'machine.timelapse.saveframes': 'owner',
   'machine.timelapse.render': 'owner',
-  'machine.peripherals.usb': 'user',
-  'machine.peripherals.serial': 'user',
-  'machine.peripherals.video': 'user',
-  'machine.peripherals.canbus': 'user',
+  'machine.peripherals.usb': 'owner',
+  'machine.peripherals.serial': 'owner',
+  'machine.peripherals.video': 'owner',
+  'machine.peripherals.canbus': 'owner',
 
   'server.files.delete_file': 'owner',
   'server.files.delete_directory': 'owner',
@@ -83,7 +83,8 @@ export const socketMethodMinRole: Record<string, Role> = {
   'server.analysis.process': 'user',
 
   'access.logout': 'guest',
-  'access.oneshot_token': 'user',
+  // Authenticated guests need oneshot URLs for read-only streams/downloads (Moonraker still enforces object policy).
+  'access.oneshot_token': 'guest',
   'access.get_user': 'guest',
   'access.users.list': 'guest',
   'access.user.password': 'user',

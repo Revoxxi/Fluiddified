@@ -1,7 +1,7 @@
 <template>
   <v-dialog
     :value="value"
-    max-width="420"
+    :max-width="dialogMaxWidth"
     @input="$emit('input', $event)"
   >
     <v-card>
@@ -29,7 +29,7 @@
         />
       </v-card-title>
 
-      <v-card-text>
+      <v-card-text :class="{ 'achievement-detail-dialog__text--guide': showCalibrationGuide }">
         <p>{{ displayDescription }}</p>
 
         <div
@@ -37,6 +37,118 @@
           class="text-body-2 font-italic mb-3"
         >
           "{{ definition.unlockMessage }}"
+        </div>
+
+        <div
+          v-if="showCalibrationGuide"
+          class="achievement-detail-dialog__guide mb-4"
+        >
+          <div
+            v-if="isUnlocked"
+            class="text-body-2 mb-3"
+          >
+            <v-icon
+              small
+              color="success"
+              class="mr-1"
+            >
+              $check
+            </v-icon>
+            Unlocked {{ formatDate(progress?.unlockedAt) }}
+          </div>
+
+          <div class="text-subtitle-2 mb-1">
+            Extruder setup
+          </div>
+          <p class="text-caption text--secondary mb-2">
+            Pick your setup for example starting G-code (still verify on your hardware).
+          </p>
+          <v-radio-group
+            :value="extruderMode"
+            row
+            hide-details
+            dense
+            class="mt-0"
+            @change="onExtruderModeChange"
+          >
+            <v-radio
+              label="Direct drive"
+              value="direct"
+            />
+            <v-radio
+              label="Bowden"
+              value="bowden"
+            />
+          </v-radio-group>
+
+          <v-divider class="my-3" />
+
+          <div class="achievement-detail-dialog__steps">
+            <div
+              v-for="(step, idx) in guideSteps"
+              :key="idx"
+              class="mb-4"
+            >
+              <div class="d-flex align-center mb-1">
+                <v-icon
+                  x-small
+                  :color="calibrationStepDone(idx) ? 'success' : 'grey'"
+                  class="mr-2"
+                >
+                  {{ calibrationStepDone(idx) ? '$check' : '$circle' }}
+                </v-icon>
+                <span class="text-subtitle-2">{{ idx + 1 }}. {{ step.title }}</span>
+              </div>
+              <p class="text-body-2 mb-2">
+                {{ step.summary }}
+              </p>
+              <p
+                v-if="step.methodTip"
+                class="text-caption text--secondary font-italic mb-2"
+              >
+                {{ step.methodTip }}
+              </p>
+              <v-btn
+                small
+                outlined
+                color="primary"
+                class="mb-2"
+                :href="step.docUrl"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
+                Klipper documentation
+                <v-icon
+                  right
+                  x-small
+                >
+                  $openInNew
+                </v-icon>
+              </v-btn>
+              <div class="text-caption text--secondary mb-1">
+                Example G-code
+              </div>
+              <div
+                v-for="(line, li) in suggestedLines(step)"
+                :key="li"
+                class="d-flex align-start mb-1"
+              >
+                <code class="achievement-detail-dialog__code flex-grow-1">{{ line }}</code>
+                <v-btn
+                  v-if="copyableGcodeLine(line)"
+                  icon
+                  x-small
+                  class="ml-1 flex-shrink-0"
+                  :aria-label="'Copy'"
+                  @click="copyGcodeLine(line)"
+                >
+                  <v-icon x-small>
+                    {{ $globals.Icons.contentCopy }}
+                  </v-icon>
+                </v-btn>
+              </div>
+            </div>
+          </div>
         </div>
 
         <div
@@ -88,7 +200,7 @@
         </div>
 
         <div
-          v-else-if="isUnlocked"
+          v-else-if="isUnlocked && !definition.calibrationGuide"
           class="text-body-2"
         >
           <v-icon
@@ -101,7 +213,7 @@
           Unlocked {{ formatDate(progress?.unlockedAt) }}
         </div>
         <div
-          v-else-if="!secretLocked"
+          v-else-if="!secretLocked && !definition.calibrationGuide"
           class="text-body-2 text--secondary"
         >
           Not yet unlocked
@@ -127,8 +239,16 @@
 
 <script lang="ts">
 import { Component, Prop, Vue } from 'vue-property-decorator'
-import type { AchievementDefinition, AchievementProgress, AchievementRarity } from '@/types/achievement'
+import type {
+  AchievementDefinition,
+  AchievementProgress,
+  AchievementRarity,
+  CalibrationExtruderMode,
+  CalibrationGuideStep
+} from '@/types/achievement'
+import { EventBus } from '@/eventBus'
 import { formatAchievementDescription } from '@/util/achievementDisplay'
+import clipboardCopy from '@/util/clipboard-copy'
 import AchievementRarityBadge from './AchievementRarityBadge.vue'
 
 const rarityColors: Record<AchievementRarity, string> = {
@@ -221,5 +341,70 @@ export default class AchievementDetailDialog extends Vue {
     if (!ts) return ''
     return new Date(ts).toLocaleDateString()
   }
+
+  get dialogMaxWidth (): number {
+    return this.definition.calibrationGuide != null ? 560 : 420
+  }
+
+  get showCalibrationGuide (): boolean {
+    return !this.secretLocked && this.definition.calibrationGuide != null
+  }
+
+  get guideSteps (): CalibrationGuideStep[] {
+    return this.definition.calibrationGuide?.steps ?? []
+  }
+
+  get extruderMode (): CalibrationExtruderMode {
+    return this.progress?.calibrationExtruderMode ?? 'direct'
+  }
+
+  calibrationStepDone (idx: number): boolean {
+    return this.progress?.calibrationStepsComplete?.includes(idx) ?? false
+  }
+
+  suggestedLines (step: CalibrationGuideStep): string[] {
+    return this.extruderMode === 'bowden'
+      ? step.suggestedCommands.bowden
+      : step.suggestedCommands.direct
+  }
+
+  copyableGcodeLine (line: string): boolean {
+    const t = line.trim()
+    return t.length > 0 && !t.startsWith(';')
+  }
+
+  async copyGcodeLine (line: string) {
+    const ok = await clipboardCopy(line, this.$el)
+    if (ok) {
+      EventBus.$emit('Copied to clipboard', { type: 'success', timeout: 2000 })
+    }
+  }
+
+  onExtruderModeChange (mode: string) {
+    if (mode !== 'direct' && mode !== 'bowden') return
+    Promise.resolve(
+      this.$typedDispatch('achievements/setCalibrationExtruderMode', {
+        id: this.definition.id,
+        mode
+      })
+    ).catch(() => undefined)
+  }
 }
 </script>
+
+<style lang="scss" scoped>
+  .achievement-detail-dialog__text--guide {
+    max-height: min(72vh, 640px);
+    overflow-y: auto;
+  }
+
+  .achievement-detail-dialog__code {
+    display: block;
+    font-size: 0.75rem;
+    padding: 4px 6px;
+    border-radius: 4px;
+    background: rgba(127, 127, 127, 0.12);
+    word-break: break-word;
+    white-space: pre-wrap;
+  }
+</style>

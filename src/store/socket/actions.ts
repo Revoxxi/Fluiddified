@@ -28,7 +28,7 @@ export const actions = {
   /**
     * Fired when the socket opens.
     */
-  async onSocketOpen ({ commit }, payload) {
+  async onSocketOpen ({ commit, dispatch }, payload) {
     commit('setSocketOpen', payload)
     if (payload === true) {
       SocketActions.serverInfo()
@@ -39,6 +39,8 @@ export const actions = {
         url: Globals.GITHUB_REPO
       })
       SocketActions.serverFilesList('config')
+      // Flush in-memory achievement progress once the socket can run post_item (user+).
+      dispatch('achievements/saveToDb', undefined, { root: true }).catch(() => undefined)
     }
   },
 

@@ -15,206 +15,216 @@
           :elevation="12"
           width="100%"
         >
-        <div
-          v-if="firstUserUi === 'loading'"
-          class="text-center py-12 px-6"
-        >
-          <v-progress-circular
-            indeterminate
-            color="primary"
-            size="48"
-          />
-        </div>
+          <div
+            v-if="firstUserUi === 'loading'"
+            class="text-center py-12 px-6"
+          >
+            <v-progress-circular
+              indeterminate
+              color="primary"
+              size="48"
+            />
+          </div>
 
-        <v-card-text
-          v-else
-          class="login-panel__body pa-6 pa-sm-8"
-        >
-          <template v-if="firstUserUi === 'not_setup'">
-            <div class="text-center">
-              <v-icon
-                size="72"
-                color="secondary"
+          <v-card-text
+            v-else
+            class="login-panel__body pa-6 pa-sm-8"
+          >
+            <template v-if="firstUserUi === 'not_setup'">
+              <div class="text-center">
+                <v-icon
+                  size="72"
+                  color="secondary"
+                >
+                  {{ notSetupIcon }}
+                </v-icon>
+                <h1 class="text-h5 mt-6">
+                  {{ $t('app.general.msg.first_user_not_setup_title') }}
+                </h1>
+                <p class="text-body-1 secondary--text mt-4">
+                  {{ $t('app.general.msg.first_user_not_setup_body') }}
+                </p>
+                <p class="text-body-2 secondary--text mt-3">
+                  {{ $t('app.general.msg.first_user_not_setup_hint') }}
+                </p>
+              </div>
+            </template>
+
+            <template v-else>
+              <v-form
+                v-if="firstUserUi === 'register'"
+                @submit.prevent="handleRegister"
               >
-                {{ notSetupIcon }}
-              </v-icon>
-              <h1 class="text-h5 mt-6">
-                {{ $t('app.general.msg.first_user_not_setup_title') }}
-              </h1>
-              <p class="text-body-1 secondary--text mt-4">
-                {{ $t('app.general.msg.first_user_not_setup_body') }}
-              </p>
-              <p class="text-body-2 secondary--text mt-3">
-                {{ $t('app.general.msg.first_user_not_setup_hint') }}
-              </p>
-            </div>
-          </template>
+                <div class="text-center">
+                  <p v-safe-html="$t('app.general.msg.first_user_welcome')" />
 
-          <template v-else>
-            <v-form
-              v-if="firstUserUi === 'register'"
-              @submit.prevent="handleRegister"
-            >
-              <div class="text-center">
-                <p v-safe-html="$t('app.general.msg.first_user_welcome')" />
-
-                <v-alert
-                  v-if="registerError"
-                  type="error"
-                >
-                  {{ registerError }}
-                </v-alert>
-
-                <v-text-field
-                  v-model="username"
-                  :label="$t('app.general.label.username')"
-                  autocomplete="username"
-                  spellcheck="false"
-                  filled
-                  dense
-                  hide-details="auto"
-                  :disabled="loading"
-                  class="mb-4"
-                />
-
-                <v-text-field
-                  v-model="password"
-                  :label="$t('app.general.label.password')"
-                  autocomplete="new-password"
-                  filled
-                  dense
-                  type="password"
-                  hide-details="auto"
-                  :disabled="loading"
-                  class="mb-4"
-                />
-
-                <v-text-field
-                  v-model="passwordConfirm"
-                  :label="$t('app.general.label.confirm_password')"
-                  autocomplete="new-password"
-                  filled
-                  dense
-                  type="password"
-                  hide-details="auto"
-                  :disabled="loading"
-                  class="mb-4"
-                />
-
-                <app-btn
-                  type="submit"
-                  :disabled="loading"
-                  large
-                  block
-                  class="mb-6"
-                >
-                  <v-icon
-                    v-if="loading"
-                    class="spin mr-2"
+                  <v-alert
+                    v-if="registerError"
+                    type="error"
                   >
-                    $loading
-                  </v-icon>
-                  {{ $t('app.general.btn.create_account') }}
-                </app-btn>
+                    {{ registerError }}
+                  </v-alert>
 
-                <app-btn
-                  plain
-                  class="custom-transform-class text-none"
-                  :href="$globals.DOCS_AUTH"
-                  target="_blank"
-                >
-                  {{ $t('app.general.btn.auth_unsure') }}
-                </app-btn>
-              </div>
-            </v-form>
+                  <v-text-field
+                    v-model="username"
+                    :label="$t('app.general.label.username')"
+                    autocomplete="username"
+                    spellcheck="false"
+                    filled
+                    dense
+                    hide-details="auto"
+                    :disabled="loading"
+                    class="mb-4"
+                  />
 
-            <v-form
-              v-else
-              @submit.prevent="handleLogin"
-            >
-              <div class="text-center">
-                <p v-safe-html="$t('app.general.msg.welcome_back')" />
+                  <v-text-field
+                    v-model="password"
+                    :label="$t('app.general.label.password')"
+                    autocomplete="new-password"
+                    filled
+                    dense
+                    type="password"
+                    hide-details="auto"
+                    :disabled="loading"
+                    class="mb-4"
+                  />
 
-                <v-alert
-                  v-if="error"
-                  type="error"
-                >
-                  {{ $t('app.general.simple_form.error.credentials') }}
-                </v-alert>
+                  <v-text-field
+                    v-model="passwordConfirm"
+                    :label="$t('app.general.label.confirm_password')"
+                    autocomplete="new-password"
+                    filled
+                    dense
+                    type="password"
+                    hide-details="auto"
+                    :disabled="loading"
+                    class="mb-4"
+                  />
 
-                <v-text-field
-                  v-model="username"
-                  :label="$t('app.general.label.username')"
-                  autocomplete="username"
-                  spellcheck="false"
-                  filled
-                  dense
-                  hide-details="auto"
-                  :disabled="loading"
-                  class="mb-4"
-                />
-
-                <v-text-field
-                  v-model="password"
-                  :label="$t('app.general.label.password')"
-                  autocomplete="current-password"
-                  filled
-                  dense
-                  type="password"
-                  hide-details="auto"
-                  :disabled="loading"
-                  class="mb-4"
-                />
-
-                <v-select
-                  v-if="availableSources.length > 1"
-                  v-model="source"
-                  :label="$t('app.general.label.auth_source')"
-                  filled
-                  dense
-                  hide-details="auto"
-                  :disabled="loading"
-                  :items="availableSources.map(value => ({ text: $t(`app.general.label.${value}`), value }))"
-                  class="mb-4"
-                />
-
-                <app-btn
-                  type="submit"
-                  :disabled="loading"
-                  large
-                  block
-                  class="mb-6"
-                >
-                  <v-icon
-                    v-if="loading"
-                    class="spin mr-2"
+                  <app-btn
+                    type="submit"
+                    :disabled="loading"
+                    large
+                    block
+                    class="mb-6"
                   >
-                    $loading
-                  </v-icon>
-                  {{ $t('app.general.btn.login') }}
-                </app-btn>
+                    <v-icon
+                      v-if="loading"
+                      class="spin mr-2"
+                    >
+                      $loading
+                    </v-icon>
+                    {{ $t('app.general.btn.create_account') }}
+                  </app-btn>
 
-                <app-btn
-                  plain
-                  class="custom-transform-class text-none"
-                  :href="$globals.DOCS_AUTH_LOST_PASSWORD"
-                  target="_blank"
-                >
-                  {{ $t('app.general.btn.forgot_password') }}
-                </app-btn>
+                  <app-btn
+                    plain
+                    class="custom-transform-class text-none"
+                    :href="$globals.DOCS_AUTH"
+                    target="_blank"
+                  >
+                    {{ $t('app.general.btn.auth_unsure') }}
+                  </app-btn>
+                </div>
+              </v-form>
 
-                <app-btn
-                  plain
-                  class="custom-transform-class text-none"
-                  :href="$globals.DOCS_AUTH"
-                  target="_blank"
-                >
-                  {{ $t('app.general.btn.auth_unsure') }}
-                </app-btn>
-              </div>
-            </v-form>
-          </template>
-        </v-card-text>
+              <v-form
+                v-else
+                @submit.prevent="handleLogin"
+              >
+                <div class="text-center">
+                  <p v-safe-html="$t('app.general.msg.welcome_back')" />
+
+                  <v-alert
+                    v-if="moonrakerLoginRequired"
+                    type="info"
+                    dense
+                    outlined
+                    class="text-left mb-4"
+                  >
+                    {{ $t('app.general.msg.moonraker_signin_hint') }}
+                  </v-alert>
+
+                  <v-alert
+                    v-if="error"
+                    type="error"
+                  >
+                    {{ $t('app.general.simple_form.error.credentials') }}
+                  </v-alert>
+
+                  <v-text-field
+                    v-model="username"
+                    :label="$t('app.general.label.username')"
+                    autocomplete="username"
+                    spellcheck="false"
+                    filled
+                    dense
+                    hide-details="auto"
+                    :disabled="loading"
+                    class="mb-4"
+                  />
+
+                  <v-text-field
+                    v-model="password"
+                    :label="$t('app.general.label.password')"
+                    autocomplete="current-password"
+                    filled
+                    dense
+                    type="password"
+                    hide-details="auto"
+                    :disabled="loading"
+                    class="mb-4"
+                  />
+
+                  <v-select
+                    v-if="availableSources.length > 1"
+                    v-model="source"
+                    :label="$t('app.general.label.auth_source')"
+                    filled
+                    dense
+                    hide-details="auto"
+                    :disabled="loading"
+                    :items="availableSources.map(value => ({ text: $t(`app.general.label.${value}`), value }))"
+                    class="mb-4"
+                  />
+
+                  <app-btn
+                    type="submit"
+                    :disabled="loading"
+                    large
+                    block
+                    class="mb-6"
+                  >
+                    <v-icon
+                      v-if="loading"
+                      class="spin mr-2"
+                    >
+                      $loading
+                    </v-icon>
+                    {{ $t('app.general.btn.login') }}
+                  </app-btn>
+
+                  <app-btn
+                    plain
+                    class="custom-transform-class text-none"
+                    :href="$globals.DOCS_AUTH_LOST_PASSWORD"
+                    target="_blank"
+                  >
+                    {{ $t('app.general.btn.forgot_password') }}
+                  </app-btn>
+
+                  <app-btn
+                    plain
+                    class="custom-transform-class text-none"
+                    :href="$globals.DOCS_AUTH"
+                    target="_blank"
+                  >
+                    {{ $t('app.general.btn.auth_unsure') }}
+                  </app-btn>
+                </div>
+              </v-form>
+            </template>
+          </v-card-text>
         </v-card>
       </div>
     </v-col>
@@ -246,6 +256,8 @@ export default class Login extends VueBase {
 
   firstUserUi: 'loading' | 'login' | 'register' | 'not_setup' = 'loading'
   registerError = ''
+  /** From Moonraker /access/info when logins are mandatory (e.g. force_logins). */
+  moonrakerLoginRequired = false
 
   /**
    * Discovery can take several seconds. `httpClient.defaults.baseURL` is set as soon

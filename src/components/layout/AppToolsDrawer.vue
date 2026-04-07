@@ -9,7 +9,7 @@
     dense
   >
     <v-list
-      v-if="socketConnected && uiSessionActive && !isGuest"
+      v-if="socketConnected && uiSessionActive && isOwner"
       dense
     >
       <v-subheader>{{ instanceName }}</v-subheader>
