@@ -1,0 +1,1 @@
+import{o as e}from"./socketActions-Ba0tcg7j.js";var t=(t,n)=>t.types.includes(e.FILE_DATA_TRANSFER_TYPES[n]),n=(t,n,r)=>{t.setData(e.FILE_DATA_TRANSFER_TYPES[n],JSON.stringify(r))},r=(t,n)=>{let r=t.getData(e.FILE_DATA_TRANSFER_TYPES[n]);return JSON.parse(r)};export{t as n,n as r,r as t};

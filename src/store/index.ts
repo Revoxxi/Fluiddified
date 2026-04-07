@@ -1,0 +1,134 @@
+import Vue from 'vue'
+import Vuex, { type StoreOptions } from 'vuex'
+import { consola } from 'consola'
+import type { RootModules, RootState } from './types'
+import type { InitConfig } from './config/types'
+
+// Modules
+import { socket } from './socket'
+import { auth } from './auth'
+import { server } from './server'
+import { printer } from './printer'
+import { config } from './config'
+import { files } from './files'
+import { layout } from './layout'
+import { charts } from './charts'
+import { console } from './console'
+import { macros } from './macros'
+import { power } from './power'
+import { history } from './history'
+import { version } from './version'
+import { mesh } from './mesh'
+import { notifications } from './notifications'
+import { announcements } from './announcements'
+import { wait } from './wait'
+import { gcodePreview } from './gcodePreview'
+import { timelapse } from './timelapse'
+import { webcams } from './webcams'
+import { jobQueue } from './jobQueue'
+import { spoolman } from './spoolman'
+import { mmu } from './mmu'
+import { sensors } from './sensors'
+import { database } from './database'
+import { analysis } from './analysis'
+import { afc } from './afc'
+import { plugins } from './plugins'
+import { achievements } from './achievements'
+
+Vue.use(Vuex)
+
+export const storeOptions = {
+  strict: (import.meta.env.DEV),
+  modules: {
+    socket,
+    auth,
+    server,
+    printer,
+    config,
+    files,
+    layout,
+    charts,
+    console,
+    macros,
+    power,
+    history,
+    version,
+    mesh,
+    notifications,
+    announcements,
+    wait,
+    gcodePreview,
+    timelapse,
+    webcams,
+    jobQueue,
+    spoolman,
+    mmu,
+    sensors,
+    database,
+    analysis,
+    afc,
+    plugins,
+    achievements
+  } satisfies RootModules,
+  mutations: {},
+  actions: {
+    /**
+     * Resets all stores
+     */
+    async reset ({ dispatch }, payload: string[]) {
+      // Reset our color set.
+      Vue.$colorset.forceResetAll()
+
+      // Dispatch a reset for each registered module.
+      const p: Promise<unknown>[] = []
+      const keys = payload || Object.keys(this.state)
+      keys.forEach((key) => {
+        if (this.hasModule(key)) {
+          p.push(dispatch(key + '/reset'))
+        }
+      })
+      await Promise.all(p)
+    },
+
+    async init ({ dispatch, commit }, payload: InitConfig) {
+      // Set the api connection state..
+      commit('socket/setApiConnected', payload.apiConnected)
+
+      try {
+        // Init the host and local configs..
+        await Promise.all([
+          dispatch('config/initHost', payload),
+          dispatch('config/initLocal', payload)
+        ])
+      } catch (e) {
+        // Corrupt `appInstances` or other init errors must not block `appReady` — the login
+        // route waits on it and would spin forever otherwise.
+        consola.warn('config/initHost or initLocal failed', e)
+      } finally {
+        commit('config/setAppReady', true)
+      }
+    },
+
+    async resetKlippy ({ dispatch, commit }) {
+      commit('socket/setAcceptNotifications', false)
+
+      await Promise.all([
+        dispatch('server/resetKlippy'),
+        dispatch('charts/resetChartStore'),
+        dispatch('reset', [
+          'printer',
+          'wait'
+        ])
+      ])
+    },
+
+    /**
+     * A void action. Some socket commands may not need processing.
+     */
+    void (_, payload) {
+      consola.debug('void action', payload)
+    }
+  }
+} satisfies StoreOptions<RootState>
+
+export default new Vuex.Store<RootState>(storeOptions)
