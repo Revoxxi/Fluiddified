@@ -9,7 +9,8 @@ export const defaultState = (): AuthState => {
     users: [],
     apiKey: '',
     roles: {},
-    moonrakerTrusted: false
+    moonrakerTrusted: false,
+    moonrakerLoginRequired: false
   }
 }
 

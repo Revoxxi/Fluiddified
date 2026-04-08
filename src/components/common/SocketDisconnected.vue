@@ -78,8 +78,12 @@ export default class SocketDisconnected extends Mixins(StateMixin) {
     const config = await appInit(this.activeInstance, this.$typedState.config.hostConfig)
 
     // Reconnect the socket with the instance url.
-    const trust = this.$typedState.auth.moonrakerTrusted
-    if (config.apiConfig.socketUrl && config.apiConnected && (config.apiAuthenticated || trust)) {
+    const shouldConnect = this.$typedGetters['auth/shouldConnectSocket']({
+      apiConnected: config.apiConnected,
+      apiAuthenticated: config.apiAuthenticated,
+      socketUrl: config.apiConfig.socketUrl
+    })
+    if (shouldConnect) {
       this.$socket.connect(config.apiConfig.socketUrl)
     }
   }

@@ -322,8 +322,12 @@ export default class Login extends VueBase {
 
     const config = await appInit(instance, this.$typedState.config.hostConfig)
 
-    const trust = this.$typedState.auth.moonrakerTrusted
-    if (config.apiConfig.socketUrl && config.apiConnected && (config.apiAuthenticated || trust)) {
+    const shouldConnect = this.$typedGetters['auth/shouldConnectSocket']({
+      apiConnected: config.apiConnected,
+      apiAuthenticated: config.apiAuthenticated,
+      socketUrl: config.apiConfig.socketUrl
+    })
+    if (shouldConnect) {
       consola.debug('Activating socket with config', config)
       this.$socket.connect(config.apiConfig.socketUrl)
     }

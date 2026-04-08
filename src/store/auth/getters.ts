@@ -35,9 +35,27 @@ export const getters = {
     }
     const sole = soleMoonrakerUsername(state)
     if (sole === username) return 'owner'
-    // Multi-user host with no stored row yet: default to operator, not spectator — otherwise
-    // legitimate logins look like `guest` and lose tool controls until DB hydrates.
+    // When Moonraker requires login, unknown Fluidd rows default to guest so trusted LAN
+    // never implies operator until an owner assigns a role.
+    if (state.moonrakerLoginRequired) return 'guest'
     return 'user'
+  },
+
+  /**
+   * Open WebSocket without a Fluidd JWT only when Moonraker does not require login;
+   * otherwise trusted LAN must not bypass RBAC.
+   */
+  shouldConnectSocket: (state, getters) => (opts: {
+    apiConnected: boolean
+    apiAuthenticated: boolean
+    socketUrl?: string
+  }): boolean => {
+    if (!opts.socketUrl || !opts.apiConnected) return false
+    const session = getters.uiSessionActive
+    const trustBypass =
+      !state.moonrakerLoginRequired &&
+      (opts.apiAuthenticated || state.moonrakerTrusted)
+    return session || trustBypass
   },
 
   getCurrentRole: (state, getters): Role => {

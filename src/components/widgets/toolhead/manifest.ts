@@ -8,7 +8,8 @@ const manifest: PluginManifest = {
   defaultEnabled: true,
   defaultContainer: 1,
   defaultPosition: 4,
-  minRole: 'user',
+  /** Card is always on the dashboard; ToolheadCard uses `guestMode` to disable controls for guests. */
+  minRole: 'guest',
   tags: ['control', 'toolhead']
 }
 

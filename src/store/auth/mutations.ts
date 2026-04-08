@@ -30,6 +30,10 @@ export const mutations = {
     state.moonrakerTrusted = trusted
   },
 
+  setMoonrakerLoginRequired (state, loginRequired: boolean) {
+    state.moonrakerLoginRequired = loginRequired
+  },
+
   setUsers (state, users) {
     state.users = users
   },

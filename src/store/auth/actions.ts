@@ -59,7 +59,9 @@ export const actions = {
 
     if (state.currentUser && !roles[state.currentUser.username]) {
       const isFirstUser = Object.keys(roles).length === 0
-      const defaultRole: Role = isFirstUser ? 'owner' : 'user'
+      const defaultRole: Role = isFirstUser
+        ? 'owner'
+        : (state.moonrakerLoginRequired ? 'guest' : 'user')
       commit('setUserRole', { username: state.currentUser.username, role: defaultRole })
       try {
         await SocketActions.serverDatabasePostItem('auth', { roles: state.roles })

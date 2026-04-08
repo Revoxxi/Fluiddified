@@ -96,12 +96,12 @@ async function bootstrap () {
     .then((config: InitConfig) => {
       consola.debug('Loaded App Configuration', config)
 
-      const trust = store.state.auth.moonrakerTrusted
-      if (
-        config.apiConfig.socketUrl &&
-        config.apiConnected &&
-        (config.apiAuthenticated || trust)
-      ) {
+      const shouldConnect = store.getters['auth/shouldConnectSocket']({
+        apiConnected: config.apiConnected,
+        apiAuthenticated: config.apiAuthenticated,
+        socketUrl: config.apiConfig.socketUrl
+      })
+      if (shouldConnect) {
         Vue.$socket.connect(config.apiConfig.socketUrl)
       }
     })

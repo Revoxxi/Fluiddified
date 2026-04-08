@@ -209,12 +209,16 @@ export const appInit = async (apiConfig?: ApiConfig, hostConfig?: HostConfig): P
           withAuth: false,
           timeout: Globals.AUTH_HTTP_PROBE_MS
         })
-        store.commit('auth/setMoonrakerTrusted', infoRes.data.result.trusted === true)
+        const info = infoRes.data.result
+        store.commit('auth/setMoonrakerTrusted', info.trusted === true)
+        store.commit('auth/setMoonrakerLoginRequired', info.login_required === true)
       } catch {
         store.commit('auth/setMoonrakerTrusted', false)
+        store.commit('auth/setMoonrakerLoginRequired', false)
       }
     } else {
       store.commit('auth/setMoonrakerTrusted', false)
+      store.commit('auth/setMoonrakerLoginRequired', false)
     }
 
     // Just sets the api urls

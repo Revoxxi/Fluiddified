@@ -23,6 +23,8 @@ export interface AuthState {
   roles: UserRoleMap;
   /** From Moonraker GET /access/info when the client is a trusted client (e.g. LAN). */
   moonrakerTrusted: boolean;
+  /** From Moonraker GET /access/info `login_required` (e.g. force_logins). When true, trust must not bypass Fluidd session for the socket or default roles. */
+  moonrakerLoginRequired: boolean;
 }
 
 export interface AppUser {
