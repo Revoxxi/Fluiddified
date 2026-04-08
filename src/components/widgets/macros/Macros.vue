@@ -27,6 +27,7 @@
               {{ category.macros.length }}
             </v-chip>
             <app-btn
+              v-if="showCategoryEdit"
               icon
               class="ml-1"
               @click.prevent.stop="handleEditCategory(category?.id ?? '0')"
@@ -66,7 +67,7 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins } from 'vue-property-decorator'
+import { Component, Mixins, Prop } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import MacroBtn from './MacroBtn.vue'
 
@@ -76,6 +77,10 @@ import MacroBtn from './MacroBtn.vue'
   }
 })
 export default class Macros extends Mixins(StateMixin) {
+  /** Category editor — settings integration; owners only outside the dedicated macros page. */
+  @Prop({ type: Boolean, default: true })
+  readonly showCategoryEdit!: boolean
+
   get macros () {
     return this.$typedGetters['macros/getVisibleMacros']
   }

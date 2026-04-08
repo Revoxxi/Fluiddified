@@ -1,12 +1,13 @@
 <template>
-  <collapsable-card
-    :title="$t('app.general.title.macros')"
-    icon="$fileCode"
-    draggable
-    layout-path="dashboard.macros-card"
+  <v-container
+    fluid
+    class="constrained-width pa-2 pa-sm-4"
   >
+    <h1 class="text-h5 font-weight-light mb-4">
+      {{ $t('app.general.title.macros') }}
+    </h1>
     <macros :show-category-edit="isOwner" />
-  </collapsable-card>
+  </v-container>
 </template>
 
 <script lang="ts">
@@ -19,6 +20,6 @@ import Macros from '@/components/widgets/macros/Macros.vue'
     Macros
   }
 })
-export default class MacrosCard extends Mixins(AuthMixin) {
+export default class MacrosPage extends Mixins(AuthMixin) {
 }
 </script>

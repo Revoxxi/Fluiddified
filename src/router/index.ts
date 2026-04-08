@@ -69,6 +69,16 @@ const routes: Array<RouteConfig> = [
     }
   },
   {
+    path: '/macros',
+    name: 'macros',
+    component: () => import('@/views/MacrosPage.vue'),
+    ...defaultRouteConfig,
+    meta: {
+      ...defaultRouteConfig.meta,
+      minRole: 'user' as Role
+    }
+  },
+  {
     path: '/diagnostics',
     name: 'diagnostics',
     component: () => import('@/views/Diagnostics.vue'),

@@ -80,8 +80,20 @@ export default class AppNavItem extends Mixins(StateMixin, BrowserMixin) {
       this.$route.name !== this.to
     ) {
       if (
-        (this.to === 'console' || this.to === 'settings') &&
+        (this.to === 'console' ||
+          this.to === 'settings' ||
+          this.to === 'configure' ||
+          this.to === 'system') &&
         !this.$typedGetters['auth/hasMinRole']('owner')
+      ) {
+        return
+      }
+
+      if (
+        (this.to === 'jobs' ||
+          this.to === 'tune' ||
+          this.to === 'macros') &&
+        !this.$typedGetters['auth/hasMinRole']('user')
       ) {
         return
       }

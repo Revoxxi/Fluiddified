@@ -8,6 +8,7 @@ import { httpClientActions } from '@/api/httpClientActions'
 import { consola } from 'consola'
 import { Globals } from '@/globals'
 import { SocketActions } from '@/api/socketActions'
+import { jwtDecode } from 'jwt-decode'
 
 export const actions = {
   async reset ({ commit }) {
@@ -114,6 +115,15 @@ export const actions = {
       commit('setToken', token)
       commit('setRefreshToken', refreshToken)
       httpClientActions.defaults.headers.common.Authorization = `Bearer ${token}`
+      try {
+        const decoded = jwtDecode<{ exp?: number }>(token)
+        const nowSec = Date.now() / 1000
+        if (decoded.exp == null || decoded.exp > nowSec) {
+          commit('setAuthenticated', true)
+        }
+      } catch {
+        /* corrupt token in storage */
+      }
     } else {
       delete httpClientActions.defaults.headers.common.Authorization
     }

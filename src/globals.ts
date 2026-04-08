@@ -333,6 +333,7 @@ export const Globals = Object.freeze({
     history: 'i',
     timelapse: 'l',
     tune: 't',
+    macros: 'm',
     diagnostics: 'g',
     configure: 'x',
     system: 'q',

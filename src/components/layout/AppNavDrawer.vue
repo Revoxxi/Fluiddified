@@ -40,21 +40,6 @@
           </app-nav-item>
 
           <app-nav-item
-            v-if="hasRouteAccess('owner')"
-            icon="$console"
-            to="console"
-          >
-            {{ $t('app.general.title.console') }}
-          </app-nav-item>
-
-          <app-nav-item
-            icon="$cubeScan"
-            to="gcode_preview"
-          >
-            {{ $t('app.general.title.gcode_preview') }}
-          </app-nav-item>
-
-          <app-nav-item
             v-if="hasRouteAccess('user')"
             icon="$files"
             to="jobs"
@@ -63,11 +48,11 @@
           </app-nav-item>
 
           <app-nav-item
-            v-if="supportsHistory"
-            icon="$history"
-            to="history"
+            v-if="hasRouteAccess('owner')"
+            icon="$console"
+            to="console"
           >
-            {{ $t('app.general.title.history') }}
+            {{ $t('app.general.title.console') }}
           </app-nav-item>
 
           <app-nav-item
@@ -87,11 +72,26 @@
           </app-nav-item>
 
           <app-nav-item
-            v-if="enableDiagnostics && hasRouteAccess('user')"
-            icon="$chart"
-            to="diagnostics"
+            v-if="hasRouteAccess('user')"
+            icon="$fileCode"
+            to="macros"
           >
-            {{ $t('app.general.title.diagnostics') }}
+            {{ $t('app.general.title.macros') }}
+          </app-nav-item>
+
+          <app-nav-item
+            icon="$cubeScan"
+            to="gcode_preview"
+          >
+            {{ $t('app.general.title.gcode_preview') }}
+          </app-nav-item>
+
+          <app-nav-item
+            v-if="supportsHistory"
+            icon="$history"
+            to="history"
+          >
+            {{ $t('app.general.title.history') }}
           </app-nav-item>
 
           <app-nav-item
@@ -170,10 +170,6 @@ export default class AppNavDrawer extends Mixins(StateMixin, BrowserMixin) {
 
   get supportsTimelapse (): boolean {
     return this.$typedGetters['server/componentSupport']('timelapse')
-  }
-
-  get enableDiagnostics (): boolean {
-    return this.$typedState.config.uiSettings.general.enableDiagnostics
   }
 
   get hasSubNavigation () {
