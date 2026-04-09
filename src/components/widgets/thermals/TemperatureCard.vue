@@ -9,7 +9,7 @@
   >
     <template #menu>
       <app-btn-collapse-group
-        v-if="!guestMode"
+        v-if="!isGuest"
         :collapsed="narrow"
       >
         <temperature-presets-menu
@@ -19,6 +19,7 @@
       </app-btn-collapse-group>
 
       <v-menu
+        v-if="!isGuest"
         bottom
         left
         offset-y
@@ -97,7 +98,8 @@
     </template>
 
     <temperature-targets
-      :readonly="guestMode"
+      :readonly="isGuest"
+      :manual-target-lock="!isOwner"
       @updateChartSelectedLegends="updateChartSelectedLegends"
     />
 
@@ -116,6 +118,7 @@
 import { Component, Mixins, Prop, Ref } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import BrowserMixin from '@/mixins/browser'
+import AuthMixin from '@/mixins/auth'
 
 import ThermalChart from '@/components/widgets/thermals/ThermalChart.vue'
 import TemperatureTargets from '@/components/widgets/thermals/TemperatureTargets.vue'
@@ -131,13 +134,9 @@ import { encodeGcodeParamValue } from '@/util/gcode-helpers'
     TemperaturePresetsMenu
   }
 })
-export default class TemperatureCard extends Mixins(StateMixin, BrowserMixin) {
+export default class TemperatureCard extends Mixins(StateMixin, BrowserMixin, AuthMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
-
-  get guestMode (): boolean {
-    return this.$typedGetters['auth/isGuest']
-  }
 
   @Ref('thermalchart')
   readonly thermalChartElement!: ThermalChart

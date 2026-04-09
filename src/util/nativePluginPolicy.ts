@@ -28,18 +28,15 @@ export const NATIVE_BUNDLED_PLUGIN_IDS = new Set<string>([
 
 /**
  * Optional / hardware-specific native widgets the user may turn off from
- * Plugin manager. All other natives stay enabled.
+ * Plugin manager. Core dashboard widgets (toolhead, jobs, thermals, etc.) are
+ * always on — visibility for spectators vs operators is RBAC inside each card.
  */
 export const NATIVE_OPTIONAL_DISABLE_IDS = new Set<string>([
-  'achievements-card',
   'afc-card',
   'beacon-card',
-  'job-queue-card',
   'mmu-card',
-  'outputs-card',
-  'runout-sensors-card',
-  'sensors-card',
-  'spoolman-card'
+  'spoolman-card',
+  'runout-sensors-card'
 ])
 
 export function isNativeBundledPlugin (id: string): boolean {

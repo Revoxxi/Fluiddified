@@ -5,22 +5,19 @@
     draggable
     layout-path="dashboard.printer-limits-card"
   >
-    <printer-limits :readonly="guestMode" />
+    <printer-limits :readonly="!isOwner" />
   </collapsable-card>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Mixins } from 'vue-property-decorator'
 import PrinterLimits from '@/components/widgets/limits/PrinterLimits.vue'
+import AuthMixin from '@/mixins/auth'
 
 @Component({
   components: {
     PrinterLimits
   }
 })
-export default class PrinterLimitsCard extends Vue {
-  get guestMode (): boolean {
-    return this.$typedGetters['auth/isGuest']
-  }
-}
+export default class PrinterLimitsCard extends Mixins(AuthMixin) {}
 </script>

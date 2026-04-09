@@ -9,7 +9,7 @@ const manifest: PluginManifest = {
   defaultContainer: 2,
   defaultPosition: 7,
   isAvailable: (store) => store.getters['printer/getSupportsBeacon'],
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['beacon', 'probe']
 }
 

@@ -13,12 +13,25 @@ export type AchievementRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legen
 /** Extruder setup for calibration command hints (direct drive vs bowden). */
 export type CalibrationExtruderMode = 'direct' | 'bowden'
 
+/** Bed leveling approach for the calibration guide (affects which steps apply). */
+export type CalibrationBedLeveling = 'probe' | 'screws'
+
+/** Saved calibration guide options (persisted with achievements in Moonraker DB). */
+export interface CalibrationGuideUserConfig {
+  extruderMode: CalibrationExtruderMode
+  bedLeveling: CalibrationBedLeveling
+  /** Typical nozzle diameter in mm (e.g. 0.4). */
+  nozzleSizeMm: number
+}
+
 export interface CalibrationGuideSuggested {
   direct: string[]
   bowden: string[]
 }
 
 export interface CalibrationGuideStep {
+  /** Stable id for progress + G-code matching (not affected by list order). */
+  key: string
   /** Step title shown in the guide */
   title: string
   /** Short explanation */
@@ -59,8 +72,17 @@ export interface AchievementProgress {
   tierReached: number
   unlockedAt?: number
   tierUnlockedAt?: Record<number, number>
-  calibrationStepsComplete?: number[]
+  /**
+   * Completed calibration guide step ids (`CalibrationGuideStep.key`).
+   * Legacy DB entries used indices (0..n); normalized on load.
+   */
+  calibrationStepsComplete?: string[] | number[]
+  /** @deprecated use `calibrationGuideConfig.extruderMode` */
   calibrationExtruderMode?: CalibrationExtruderMode
+  /** Committed guide options; syncs across devices with achievement DB. */
+  calibrationGuideConfig?: CalibrationGuideUserConfig
+  /** True after the user saves setup (required before steps count toward the achievement). */
+  calibrationGuideConfigSaved?: boolean
 }
 
 export interface AchievementStats {

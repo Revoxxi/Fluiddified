@@ -1,4 +1,8 @@
 import type { AchievementDefinition, AchievementProgress } from '@/types/achievement'
+import {
+  calibrationCompletedStepCount,
+  DEFAULT_CALIBRATION_GUIDE_CONFIG
+} from '@/util/calibrationGuideRuntime'
 
 /** Next tier threshold, or last tier when all are unlocked. */
 export function getAchievementNextTarget (def: AchievementDefinition, progress?: AchievementProgress): number {
@@ -15,10 +19,17 @@ export function getAchievementNextTarget (def: AchievementDefinition, progress?:
  */
 export function formatAchievementDescription (def: AchievementDefinition, progress?: AchievementProgress): string {
   if (def.calibrationGuide) {
-    const n = def.calibrationGuide.steps.length
-    const done = progress?.calibrationStepsComplete?.length ?? 0
     if (progress?.unlockedAt != null) return def.description
-    return `${def.description} — ${done}/${n} steps`
+    if (progress?.calibrationGuideConfigSaved !== true) {
+      return `${def.description} — save your printer setup to start`
+    }
+    const cfg = progress.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG
+    const { done, total } = calibrationCompletedStepCount(
+      def.calibrationGuide.steps,
+      cfg,
+      progress.calibrationStepsComplete
+    )
+    return `${def.description} — ${done}/${total} steps`
   }
   if (!def.tiers?.length) return def.description
   const t = getAchievementNextTarget(def, progress)

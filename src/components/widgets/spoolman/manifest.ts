@@ -8,7 +8,7 @@ const manifest: PluginManifest = {
   defaultContainer: 1,
   defaultPosition: 1,
   isAvailable: (store) => store.getters['server/componentSupport']('spoolman'),
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['spoolman', 'filament']
 }
 

@@ -10,6 +10,7 @@
   >
     <v-list dense>
       <v-list-item
+        v-if="isOwner"
         :disabled="!klippyReady || printerPrinting || !heaterIsOn || heater.disconnected"
         @click="$emit('turn-off', heater)"
       >

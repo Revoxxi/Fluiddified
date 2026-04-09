@@ -8,7 +8,7 @@ const manifest: PluginManifest = {
   defaultContainer: 1,
   defaultPosition: 2,
   isAvailable: (store) => store.state.printer.printer.mmu != null,
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['mmu', 'multi-material']
 }
 

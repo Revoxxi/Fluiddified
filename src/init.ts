@@ -37,6 +37,28 @@ const getHostConfig = async () => {
   }
 }
 
+/**
+ * Same hostname but page is on reverse-proxy port (80/8080/…) while localStorage still
+ * has direct Moonraker — WS to :7125 fails from the browser; camera on `/webcam` still works.
+ */
+function storedApiUrlIncompatibleWithHosted (apiUrl: string): boolean {
+  try {
+    const u = new URL(apiUrl)
+    if (u.hostname !== document.location.hostname) {
+      return false
+    }
+    const pagePort = document.location.port || (document.location.protocol === 'https:' ? '443' : '80')
+    const storedPort = u.port || (u.protocol === 'https:' ? '443' : '80')
+    return (
+      (storedPort === '7125' || storedPort === '7130') &&
+      pagePort !== '7125' &&
+      pagePort !== '7130'
+    )
+  } catch {
+    return false
+  }
+}
+
 const getApiConfig = async (hostConfig: HostConfig, apiUrlHash?: string | null): Promise<ApiConfig | InstanceConfig> => {
   // Local storage load
   if (Globals.LOCAL_INSTANCES_STORAGE_KEY in localStorage) {
@@ -51,18 +73,36 @@ const getApiConfig = async (hostConfig: HostConfig, apiUrlHash?: string | null):
         consola.warn('Ignoring invalid appInstances in localStorage', e)
       }
       if (instances.length) {
+        const rejectHostedMismatch = (config: InstanceConfig): boolean => {
+          if (storedApiUrlIncompatibleWithHosted(config.apiUrl)) {
+            consola.warn(
+              '[config] Ignoring stored API URL pointing at this host\'s :7125 while the UI is on another port — ' +
+                'using same-origin API/WebSocket. Set config.json "hosted": true when behind Fluiddified/nginx; ' +
+                'clear localStorage appInstances if needed.'
+            )
+            return true
+          }
+          return false
+        }
+
         if (apiUrlHash) {
           for (const config of instances) {
             if (md5(config.apiUrl) === apiUrlHash) {
-              consola.debug('API Config from Local Storage', config)
-              return config
+              if (!rejectHostedMismatch(config)) {
+                consola.debug('API Config from Local Storage', config)
+                return config
+              }
+              break
             }
           }
         }
         for (const config of instances) {
           if (config.active) {
-            consola.debug('API Config from Local Storage', config)
-            return config
+            if (!rejectHostedMismatch(config)) {
+              consola.debug('API Config from Local Storage', config)
+              return config
+            }
+            break
           }
         }
       }
@@ -86,15 +126,39 @@ const getApiConfig = async (hostConfig: HostConfig, apiUrlHash?: string | null):
         .filter((endpoint): endpoint is string => !!endpoint))
   }
 
-  // Add the browsers url to our endpoints list, unless black listed.
+  // Add the browser url to our endpoints list, unless black listed.
   if (blacklist.findIndex(s => s.includes(document.location.hostname)) === -1) {
-    // Add the browser url.
-    endpoints.push(`${document.location.protocol}//${document.location.host}`)
+    const sameOrigin = `${document.location.protocol}//${document.location.host}`
+    endpoints.push(sameOrigin)
 
-    // Add the moonraker endpoints...
-    const port = document.location.protocol === 'https:' ? '7130' : '7125'
-
-    endpoints.push(`${document.location.protocol}//${document.location.hostname}:${port}`)
+    /**
+     * Never auto-probe direct Moonraker :7125 when:
+     * - `hosted`: UI is behind Fluiddified/nginx proxy — API/WS must stay same-origin
+     *   (camera already uses `/webcam` on that origin; Moonraker must match).
+     * - UI is on a non-default port (e.g. :80, :8080) unless `probeDirectMoonrakerPort`:
+     *   otherwise the race often picks `http://host:7125`, WebSocket fails from the browser
+     *   while `/webcam` on the proxy still works.
+     */
+    if (hostConfig.hosted) {
+      // sameOrigin only
+    } else if (hostConfig.probeDirectMoonrakerPort === true) {
+      const port = document.location.protocol === 'https:' ? '7130' : '7125'
+      const direct = `${document.location.protocol}//${document.location.hostname}:${port}`
+      if (direct !== sameOrigin) {
+        endpoints.push(direct)
+      }
+    } else {
+      const effectivePort = document.location.port ||
+        (document.location.protocol === 'https:' ? '443' : '80')
+      const onMoonrakerListenPort = effectivePort === '7125' || effectivePort === '7130'
+      if (onMoonrakerListenPort) {
+        const port = document.location.protocol === 'https:' ? '7130' : '7125'
+        const direct = `${document.location.protocol}//${document.location.hostname}:${port}`
+        if (direct !== sameOrigin) {
+          endpoints.push(direct)
+        }
+      }
+    }
   }
 
   const abortController = new AbortController()

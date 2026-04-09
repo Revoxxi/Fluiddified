@@ -57,6 +57,10 @@
 import { Component, Prop, Vue } from 'vue-property-decorator'
 import type { AchievementDefinition, AchievementProgress, AchievementRarity } from '@/types/achievement'
 import { formatAchievementDescription } from '@/util/achievementDisplay'
+import {
+  calibrationCompletedStepCount,
+  DEFAULT_CALIBRATION_GUIDE_CONFIG
+} from '@/util/calibrationGuideRuntime'
 import AchievementRarityBadge from './AchievementRarityBadge.vue'
 
 const rarityColors: Record<AchievementRarity, string> = {
@@ -121,10 +125,14 @@ export default class AchievementItem extends Vue {
 
   get progressPercent (): number {
     if (this.definition.calibrationGuide) {
-      const n = this.definition.calibrationGuide.steps.length
-      if (n === 0) return 0
-      const done = this.progress?.calibrationStepsComplete?.length ?? 0
-      return Math.min(100, (done / n) * 100)
+      const cfg = this.progress?.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG
+      const { done, total } = calibrationCompletedStepCount(
+        this.definition.calibrationGuide.steps,
+        cfg,
+        this.progress?.calibrationStepsComplete
+      )
+      if (total === 0 || this.progress?.calibrationGuideConfigSaved !== true) return 0
+      return Math.min(100, (done / total) * 100)
     }
     if (!this.definition.tiers || !this.progress) return 0
     const reached = this.progress.tierReached

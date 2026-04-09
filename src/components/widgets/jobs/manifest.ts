@@ -8,7 +8,7 @@ const manifest: PluginManifest = {
   defaultEnabled: true,
   defaultContainer: 2,
   defaultPosition: 3,
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['files', 'monitoring']
 }
 

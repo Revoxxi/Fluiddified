@@ -9,7 +9,7 @@ const manifest: PluginManifest = {
   defaultContainer: 1,
   defaultPosition: 9,
   isAvailable: (store) => 'firmware_retraction' in store.getters['printer/getPrinterSettings'],
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['retract', 'control']
 }
 

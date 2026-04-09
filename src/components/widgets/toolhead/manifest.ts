@@ -8,7 +8,11 @@ const manifest: PluginManifest = {
   defaultEnabled: true,
   defaultContainer: 1,
   defaultPosition: 4,
-  /** Card is always on the dashboard; ToolheadCard uses `guestMode` to disable controls for guests. */
+  /**
+   * Always eligible on the dashboard; `ToolheadCard` / `Toolhead` use `guestMode`
+   * (RBAC) so spectators see the card but cannot control it — do not raise `minRole`
+   * or the entire card is hidden for users still mapped as Fluidd `guest`.
+   */
   minRole: 'guest',
   tags: ['control', 'toolhead']
 }

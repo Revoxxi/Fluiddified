@@ -3,13 +3,27 @@ import type { ActionTree } from 'vuex'
 import type { AchievementsState } from './types'
 import type { RootState } from '../types'
 import type { HistoryItem } from '../history/types'
-import type { CalibrationExtruderMode } from '@/types/achievement'
+import type { CalibrationGuideUserConfig } from '@/types/achievement'
+import {
+  calibrationGuideConfigsEqual,
+  DEFAULT_CALIBRATION_GUIDE_CONFIG,
+  getActiveCalibrationSteps,
+  migrateAchievementsDbPayload,
+  normalizeCalibrationStepsComplete
+} from '@/util/calibrationGuideRuntime'
 import { CALIBRATION_GUIDE_ACHIEVEMENT_ID } from '@/components/widgets/achievements/calibrationGuideAchievement'
 import { SocketActions } from '@/api/socketActions'
 import { EventBus } from '@/eventBus'
 import { consola } from 'consola'
 import { achievementDefinitions } from '@/components/widgets/achievements/definitions'
 import { resolveUserVisibleMacroName } from '@/store/achievements/gcodeMacros'
+import type { Role } from '@/types/auth'
+
+/** Guests may view achievements but never earn progress or unlock tiers. */
+function canEarnAchievements (rootGetters: { (key: string): unknown }): boolean {
+  const hasMinRole = rootGetters['auth/hasMinRole'] as ((minRole: Role) => boolean) | undefined
+  return hasMinRole?.('user') === true
+}
 
 const rarityPoints: Record<string, number> = {
   common: 10,
@@ -146,7 +160,7 @@ export const actions = {
 
   async initAchievements ({ commit }, payload: Partial<AchievementsState> | undefined) {
     if (payload) {
-      commit('initFromDb', payload)
+      commit('initFromDb', migrateAchievementsDbPayload(payload))
     }
   },
 
@@ -184,8 +198,9 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async unlockAchievement ({ state, commit, dispatch }, payload: { id: string, value?: number }) {
+  async unlockAchievement ({ state, commit, dispatch, rootGetters }, payload: { id: string, value?: number }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const def = achievementDefinitions.find(d => d.id === payload.id)
     if (!def) return
@@ -261,67 +276,91 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async setCalibrationExtruderMode (
-    { state, commit, dispatch },
-    payload: { id: string, mode: CalibrationExtruderMode }
+  /**
+   * Persist calibration guide machine setup. Changing options after a prior save resets
+   * this achievement’s step progress and unlock (and total points).
+   */
+  async saveCalibrationGuideConfig (
+    { state, commit, dispatch, rootGetters },
+    payload: { id: string, config: CalibrationGuideUserConfig }
   ) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     const def = achievementDefinitions.find(d => d.id === payload.id)
     if (def?.calibrationGuide == null) return
+
     const prev = state.progress[payload.id] ?? { current: 0, tierReached: 0 }
-    commit('setProgress', {
-      id: payload.id,
-      progress: {
-        ...prev,
-        calibrationExtruderMode: payload.mode
+    const oldCommitted = prev.calibrationGuideConfig
+    const hadSaved = prev.calibrationGuideConfigSaved === true
+    const configChanged =
+      hadSaved &&
+      oldCommitted != null &&
+      !calibrationGuideConfigsEqual(oldCommitted, payload.config)
+
+    let nextPoints = state.totalPoints
+    let next: typeof prev = {
+      ...prev,
+      calibrationGuideConfig: payload.config,
+      calibrationGuideConfigSaved: true
+    }
+
+    if (configChanged) {
+      if (prev.unlockedAt != null) {
+        const pts = rarityPoints[def.rarity] ?? def.points
+        nextPoints = Math.max(0, nextPoints - pts)
+        commit('setTotalPoints', nextPoints)
       }
-    })
+      next = {
+        ...next,
+        current: 0,
+        tierReached: 0,
+        unlockedAt: undefined,
+        calibrationStepsComplete: []
+      }
+    }
+
+    commit('setProgress', { id: payload.id, progress: next })
     await dispatch('saveToDb')
   },
 
   /**
    * Advance the calibration guide only on the current step and in order (G-code accepted by Klipper).
    */
-  async onCalibrationGuideGcode ({ state, commit, dispatch }, baseName: string) {
+  async onCalibrationGuideGcode ({ state, commit, dispatch, rootGetters }, baseName: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     const def = achievementDefinitions.find(d => d.id === CALIBRATION_GUIDE_ACHIEVEMENT_ID)
     if (def?.calibrationGuide == null) return
 
-    const steps = def.calibrationGuide.steps
     const progress = state.progress[CALIBRATION_GUIDE_ACHIEVEMENT_ID] ?? { current: 0, tierReached: 0 }
     if (progress.unlockedAt != null) return
+    if (progress.calibrationGuideConfigSaved !== true) return
 
-    const done = new Set(progress.calibrationStepsComplete ?? [])
-    let firstIncomplete = steps.length
-    for (let i = 0; i < steps.length; i++) {
-      if (!done.has(i)) {
-        firstIncomplete = i
-        break
-      }
-    }
-    if (firstIncomplete >= steps.length) return
+    const config = progress.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG
+    const active = getActiveCalibrationSteps(def.calibrationGuide.steps, config)
+    const doneKeys = new Set(normalizeCalibrationStepsComplete(progress.calibrationStepsComplete ?? []))
+    const firstIncomplete = active.find(s => !doneKeys.has(s.key))
+    if (firstIncomplete == null || !firstIncomplete.triggerCommands.includes(baseName)) return
 
-    const step = steps[firstIncomplete]
-    if (!step.triggerCommands.includes(baseName)) return
-
-    done.add(firstIncomplete)
-    const sorted = [...done].sort((a, b) => a - b)
+    doneKeys.add(firstIncomplete.key)
+    const sortedKeys = active.filter(s => doneKeys.has(s.key)).map(s => s.key)
     commit('setProgress', {
       id: CALIBRATION_GUIDE_ACHIEVEMENT_ID,
       progress: {
         ...progress,
-        calibrationStepsComplete: sorted,
-        current: sorted.length
+        calibrationStepsComplete: sortedKeys,
+        current: sortedKeys.length
       }
     })
 
-    if (sorted.length === steps.length) {
+    if (sortedKeys.length === active.length) {
       await dispatch('unlockAchievement', { id: CALIBRATION_GUIDE_ACHIEVEMENT_ID })
     }
   },
 
   async onPrintComplete ({ state, commit, dispatch, rootState, rootGetters }, job: HistoryItem) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const totals = rootState.history?.job_totals
     const isCompleted = job.status === 'completed'
@@ -594,8 +633,9 @@ export const actions = {
    * Klipper “ready” connection time toward `uptime_champion`. Call after prints too so
    * long sessions advance tiers without waiting for disconnect.
    */
-  async recomputeUptimeAchievement ({ state, dispatch }) {
+  async recomputeUptimeAchievement ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     const live = state.stats.uptimeSessionStartMs != null
       ? Date.now() - state.stats.uptimeSessionStartMs
       : 0
@@ -606,8 +646,9 @@ export const actions = {
     })
   },
 
-  async onKlippyReadyChanged ({ state, commit, dispatch }, payload: { prevReady: boolean, nextReady: boolean }) {
+  async onKlippyReadyChanged ({ state, commit, dispatch, rootGetters }, payload: { prevReady: boolean, nextReady: boolean }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const now = Date.now()
     if (payload.prevReady && !payload.nextReady) {
@@ -629,8 +670,9 @@ export const actions = {
     }
   },
 
-  async onConfigFileSaved ({ state, dispatch }, payload: { root: string, filename: string, contents: string }) {
+  async onConfigFileSaved ({ state, dispatch, rootGetters }, payload: { root: string, filename: string, contents: string }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     if (payload.root !== 'config' || !payload.filename.endsWith('.cfg')) return
     if (/\[gcode_macro\b/i.test(payload.contents)) {
       await dispatch('unlockAchievement', { id: 'macro_creator' })
@@ -638,8 +680,9 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onDatabaseBackupCreated ({ state, dispatch }) {
+  async onDatabaseBackupCreated ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     await dispatch('unlockAchievement', { id: 'config_backup' })
     await dispatch('saveToDb')
   },
@@ -648,8 +691,9 @@ export const actions = {
    * printer.gcode.script returned ok — Klipper accepted the script. Used for fair
    * macro / calibration / console achievement tracking (failed commands do not count).
    */
-  async onGcodeScriptOk ({ state, rootState, commit, dispatch }, script: string) {
+  async onGcodeScriptOk ({ state, rootState, commit, dispatch, rootGetters }, script: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const line = firstExecutableGcodeLine(script)
     if (!line) return
@@ -735,20 +779,23 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onMultiPrinterFleet ({ state, dispatch }) {
+  async onMultiPrinterFleet ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     await dispatch('unlockAchievement', { id: 'multi_instance' })
     await dispatch('saveToDb')
   },
 
-  async onPluginZipInstalled ({ state, dispatch }) {
+  async onPluginZipInstalled ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     await dispatch('unlockAchievement', { id: 'community_plugin' })
     await dispatch('saveToDb')
   },
 
-  async onThemeChange ({ state, commit, dispatch }, theme: string) {
+  async onThemeChange ({ state, commit, dispatch, rootGetters }, theme: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const newCount = state.stats.themeChanges + 1
     commit('updateStat', { key: 'themeChanges', value: newCount })
@@ -765,8 +812,9 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onLayoutChange ({ state, commit, dispatch }) {
+  async onLayoutChange ({ state, commit, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const newCount = state.stats.layoutChanges + 1
     commit('updateStat', { key: 'layoutChanges', value: newCount })
@@ -779,8 +827,9 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onPresetActivated ({ state, commit, dispatch }) {
+  async onPresetActivated ({ state, commit, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const newCount = state.stats.presetActivations + 1
     commit('updateStat', { key: 'presetActivations', value: newCount })
@@ -791,8 +840,9 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onKeyboardShortcutUsed ({ state, commit, dispatch }, shortcut: string) {
+  async onKeyboardShortcutUsed ({ state, commit, dispatch, rootGetters }, shortcut: string) {
     if (!state.enabled || !shortcut) return
+    if (!canEarnAchievements(rootGetters)) return
 
     if (state.stats.shortcutsUsed.includes(shortcut)) {
       return
@@ -808,22 +858,25 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async onEmergencyStop ({ state, dispatch }) {
+  async onEmergencyStop ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     await dispatch('unlockAchievement', { id: 'emergency_stop' })
   },
 
   /** Dashboard at local 3:14 PM */
-  async onDashboardClockEgg ({ state, dispatch }) {
+  async onDashboardClockEgg ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     const d = new Date()
     if (d.getHours() === 15 && d.getMinutes() === 14) {
       await dispatch('unlockAchievement', { id: 'easter_egg_time' })
     }
   },
 
-  async onKonamiKey ({ state, commit, dispatch }, key: string) {
+  async onKonamiKey ({ state, commit, dispatch, rootGetters }, key: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     const k = normalizeKonamiKey(key)
     let idx = state.stats.konamiIndex
     const expected = KONAMI_EXPECTED[idx]
@@ -842,13 +895,15 @@ export const actions = {
     }
   },
 
-  async onUserInteraction ({ state, commit }) {
+  async onUserInteraction ({ state, commit, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     commit('updateStat', { key: 'lastUserInteractionMs', value: Date.now() })
   },
 
-  async onPrintWatchBaseline ({ state, commit, dispatch }) {
+  async onPrintWatchBaseline ({ state, commit, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     commit('updateStat', { key: 'lastUserInteractionMs', value: Date.now() })
     commit('updateStat', { key: 'sawHotBedThisPrint', value: false })
     await dispatch('saveToDb')
@@ -856,6 +911,7 @@ export const actions = {
 
   async onPeriodicThermalAndPatience ({ state, commit, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     const printerState: string = rootGetters['printer/getPrinterState']
     const printing = printerState === 'printing'
     if (printing && state.stats.lastUserInteractionMs > 0) {
@@ -919,25 +975,29 @@ export const actions = {
     }
   },
 
-  async onScrollAchievementsListEnd ({ state, dispatch }) {
+  async onScrollAchievementsListEnd ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     await dispatch('unlockAchievement', { id: 'scroll_to_bottom' })
   },
 
-  async onHeaterTargetForAchievement ({ state, dispatch }, payload: { target: number }) {
+  async onHeaterTargetForAchievement ({ state, dispatch, rootGetters }, payload: { target: number }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     if (payload.target === 42) {
       await dispatch('unlockAchievement', { id: 'temp_42' })
     }
   },
 
-  async onFileOrganizerFolderCreated ({ state, dispatch }) {
+  async onFileOrganizerFolderCreated ({ state, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
     await dispatch('unlockAchievement', { id: 'file_organizer' })
   },
 
-  async onCameraView ({ state, commit, dispatch }, cameraId: string) {
+  async onCameraView ({ state, commit, dispatch, rootGetters }, cameraId: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     if (cameraId && !state.stats.webcamsViewed.includes(cameraId)) {
       const updated = [...state.stats.webcamsViewed, cameraId]
@@ -949,8 +1009,9 @@ export const actions = {
     }
   },
 
-  async onNavigate ({ state, dispatch }, route: string) {
+  async onNavigate ({ state, dispatch, rootGetters }, route: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     if (route.includes('/history')) {
       await dispatch('unlockAchievement', { id: 'history_buff' })
@@ -963,8 +1024,9 @@ export const actions = {
     }
   },
 
-  async onSettingsVisit ({ state, commit, dispatch }, section: string) {
+  async onSettingsVisit ({ state, commit, dispatch, rootGetters }, section: string) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     if (section && !state.stats.settingsSectionsVisited.includes(section)) {
       const updated = [...state.stats.settingsSectionsVisited, section]
@@ -976,8 +1038,9 @@ export const actions = {
     }
   },
 
-  async onPageRefresh ({ state, commit, dispatch }) {
+  async onPageRefresh ({ state, commit, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const newCount = state.stats.pageRefreshCount + 1
     commit('updateStat', { key: 'pageRefreshCount', value: newCount })
@@ -987,8 +1050,9 @@ export const actions = {
     await dispatch('saveToDb')
   },
 
-  async retroactiveScan ({ state, rootState, commit, dispatch }) {
+  async retroactiveScan ({ state, rootState, commit, dispatch, rootGetters }) {
     if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
 
     const jobs = rootState.history?.jobs ?? []
     const totals = (rootState.history as any)?.job_totals

@@ -84,7 +84,16 @@ export interface AfcConfig {
 export interface HostConfig {
   endpoints: string[];
   blacklist: string[];
+  /**
+   * Fluiddified (or another reverse proxy) serves the UI; Moonraker is reached only via that
+   * origin. When true, auto-discovery never probes `hostname:7125` — same-origin API + WS only.
+   */
   hosted: boolean;
+  /**
+   * Also probe Moonraker’s default port (7125 / 7130) when the UI is on another port.
+   * Default false — use for LAN installs where the UI is not proxied and Moonraker is on 7125.
+   */
+  probeDirectMoonrakerPort?: boolean;
   themePresets: ThemePreset[];
 }
 

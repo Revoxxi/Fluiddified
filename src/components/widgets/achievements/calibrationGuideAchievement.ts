@@ -17,6 +17,7 @@ export const calibrationGuideAchievement: AchievementDefinition = {
   calibrationGuide: {
     steps: [
       {
+        key: 'thermal_pid',
         title: 'Thermal control (PID or MPC)',
         summary: 'Tune heaters so temperature holds steady before mechanical and motion tuning.',
         docUrl: 'https://www.klipper3d.org/Pid_Calibrate.html',
@@ -33,8 +34,9 @@ export const calibrationGuideAchievement: AchievementDefinition = {
         }
       },
       {
+        key: 'bed_screws',
         title: 'Bed tilt (screws helper)',
-        summary: 'Level the bed mechanically before mesh—skip if you rely only on a mesh/probe.',
+        summary: 'Level the bed with the screws helper before probing a mesh.',
         docUrl: 'https://www.klipper3d.org/Manual_Level.html#the-bed-screws-helper',
         triggerCommands: ['SCREWS_TILT_CALCULATE', 'BED_SCREWS_ADJUST'],
         suggestedCommands: {
@@ -43,6 +45,7 @@ export const calibrationGuideAchievement: AchievementDefinition = {
         }
       },
       {
+        key: 'bed_mesh',
         title: 'Bed mesh',
         summary: 'Map the bed surface after mechanical leveling.',
         docUrl: 'https://www.klipper3d.org/Bed_Mesh.html',
@@ -53,6 +56,7 @@ export const calibrationGuideAchievement: AchievementDefinition = {
         }
       },
       {
+        key: 'probe_z',
         title: 'Probe / Z offset',
         summary: 'Set or refine nozzle height relative to the probe or endstop.',
         docUrl: 'https://www.klipper3d.org/Probe_Calibrate.html',
@@ -73,6 +77,7 @@ export const calibrationGuideAchievement: AchievementDefinition = {
         }
       },
       {
+        key: 'firmware_retraction',
         title: 'Firmware retraction',
         summary: 'Dial retraction before pressure advance—bowden usually needs more length.',
         docUrl: 'https://www.klipper3d.org/Config_Reference.html#firmware_retraction',
@@ -87,6 +92,7 @@ export const calibrationGuideAchievement: AchievementDefinition = {
         }
       },
       {
+        key: 'pressure_advance',
         title: 'Pressure advance',
         summary:
           'Tune PA using a print test; a tower is usually easier to read than a single line or patch pattern.',
@@ -106,6 +112,7 @@ export const calibrationGuideAchievement: AchievementDefinition = {
         }
       },
       {
+        key: 'input_shaper',
         title: 'Resonance / input shaper',
         summary: 'Measure or calibrate input shaping last so earlier extrusion tuning stays meaningful.',
         docUrl: 'https://www.klipper3d.org/Resonance_Compensation.html',

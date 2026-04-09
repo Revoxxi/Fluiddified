@@ -5,22 +5,19 @@
     draggable
     layout-path="dashboard.retract-card"
   >
-    <retract :readonly="guestMode" />
+    <retract :readonly="!isOwner" />
   </collapsable-card>
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Mixins } from 'vue-property-decorator'
 import Retract from '@/components/widgets/retract/Retract.vue'
+import AuthMixin from '@/mixins/auth'
 
 @Component({
   components: {
     Retract
   }
 })
-export default class RetractCard extends Vue {
-  get guestMode (): boolean {
-    return this.$typedGetters['auth/isGuest']
-  }
-}
+export default class RetractCard extends Mixins(AuthMixin) {}
 </script>

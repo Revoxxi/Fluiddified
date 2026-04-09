@@ -9,7 +9,7 @@ const manifest: PluginManifest = {
   defaultContainer: 1,
   defaultPosition: 7,
   isAvailable: (store) => store.getters['printer/getRunoutSensors'].length > 0,
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['sensors', 'filament']
 }
 

@@ -54,7 +54,17 @@ export const actions = {
   },
 
   async initRoles ({ commit, state, dispatch }, payload: { roles?: UserRoleMap } | undefined) {
-    const roles = payload?.roles ?? {}
+    /**
+     * `undefined` must not mean "empty roles map" — callers used to pass that after login,
+     * which wiped DB-backed roles and mis-classified every session as "first user" → `owner`.
+     * Roles are always loaded from Moonraker `fluidd` DB during `appInit` (`{}` or `{ roles }`).
+     */
+    if (payload === undefined) {
+      await dispatch('normalizeSoleAccountRoles')
+      return
+    }
+
+    const roles = payload.roles ?? {}
     commit('setRoles', roles)
 
     if (state.currentUser && !roles[state.currentUser.username]) {
@@ -260,7 +270,7 @@ export const actions = {
       commit('setToken', user.token)
       commit('setRefreshToken', user.refresh_token)
 
-      await dispatch('initRoles', undefined)
+      /** Roles: `appInit` loads `fluidd` auth from Moonraker DB; do not call `initRoles(undefined)`. */
 
       return user
     } catch (error: unknown) {
@@ -294,7 +304,7 @@ export const actions = {
       commit('setToken', user.token)
       commit('setRefreshToken', user.refresh_token)
 
-      await dispatch('initRoles', undefined)
+      /** Roles: `appInit` → `auth/initRoles` from Moonraker `fluidd` DB; avoid wiping roles here. */
 
       return user
     } catch (error: unknown) {

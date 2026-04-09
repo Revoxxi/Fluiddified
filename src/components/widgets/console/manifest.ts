@@ -8,7 +8,7 @@ const manifest: PluginManifest = {
   defaultEnabled: true,
   defaultContainer: 2,
   defaultPosition: 2,
-  minRole: 'guest',
+  minRole: 'owner',
   tags: ['console', 'monitoring']
 }
 

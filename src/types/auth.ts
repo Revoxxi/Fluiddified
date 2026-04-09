@@ -2,9 +2,9 @@
  * Fluidd RBAC (Moonraker JWT + Fluidd-stored roles per username).
  * Moonraker “trusted client” / first-user setup (`auth/state.moonrakerTrusted`, login flows)
  * does not change these permissions once a JWT session is active (`auth/uiSessionActive`).
- * - **owner** — full UI, host/config, console, settings, calibration (Tune), Z-offset, bed mesh calibrate, file delete, etc.
- * - **user** — operator: jog/extrude/M84 in tool widget, jobs, macros, diagnostics; no calibration UIs, Tune, system/configure/settings/console.
- * - **guest** — spectator: view state only; UI disables controls; socket uses `socketMethodMinRole` in `api/socketMethodAccess.ts`.
+ * - **owner** — full access; not restricted by Fluidd UI or socket policy beyond Moonraker.
+ * - **user** — operator: toolhead, jobs (read-only files), macros, limited thermals (presets + view), job queue, achievements progress, etc.; no Tune/diagnostics/console/settings/system/configure, no owner-only file ops.
+ * - **guest** — spectator: read-only dashboard widgets (see widget `minRole` in manifests); achievements visible but no progress; socket uses `socketMethodMinRole` in `api/socketMethodAccess.ts`.
  */
 export type Role = 'owner' | 'user' | 'guest'
 

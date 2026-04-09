@@ -28,7 +28,7 @@
         <tr
           v-for="item in heaters"
           :key="item.key"
-          @contextmenu.prevent="!readonly && handleHeaterRowClick(item, $event)"
+          @contextmenu.prevent="!readonly && isOwner && handleHeaterRowClick(item, $event)"
         >
           <td>
             <v-icon
@@ -82,7 +82,7 @@
           <td>/</td>
           <td @contextmenu.stop>
             <app-text-field
-              v-if="klippyReady && !readonly"
+              v-if="klippyReady && !readonly && !manualTargetLock"
               :disabled="item.disconnected"
               :value="item.target"
               :rules="[
@@ -169,7 +169,7 @@
           <td>/</td>
           <td @contextmenu.stop>
             <app-text-field
-              v-if="klippyReady && item.type === 'temperature_fan' && !readonly"
+              v-if="klippyReady && item.type === 'temperature_fan' && !readonly && !manualTargetLock"
               :disabled="item.disconnected"
               :value="item.target"
               :rules="[
@@ -309,7 +309,7 @@
     </v-simple-table>
 
     <heater-context-menu
-      v-if="contextMenuState.open && !readonly"
+      v-if="contextMenuState.open && !readonly && isOwner"
       v-model="contextMenuState.open"
       :heater="contextMenuState.heater"
       :position-x="contextMenuState.x"
@@ -342,6 +342,7 @@ import HeaterContextMenu from './HeaterContextMenu.vue'
 import HeaterPidCalibrateDialog from './HeaterPidCalibrateDialog.vue'
 import HeaterMpcCalibrateDialog from './HeaterMpcCalibrateDialog.vue'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import type { Fan, Heater, Sensor } from '@/store/printer/types'
 import { takeRightWhile } from 'lodash-es'
 import type { ChartData, ChartSelectedLegends } from '@/store/charts/types'
@@ -356,9 +357,13 @@ import isNullOrEmpty, { type NullableOrEmpty } from '@/util/is-null-or-empty'
     HeaterMpcCalibrateDialog
   }
 })
-export default class TemperatureTargets extends Mixins(StateMixin) {
+export default class TemperatureTargets extends Mixins(StateMixin, AuthMixin) {
   @Prop({ type: Boolean, default: false })
   readonly readonly!: boolean
+
+  /** When true, target fields are display-only (operator: use presets to change temps). */
+  @Prop({ type: Boolean, default: false })
+  readonly manualTargetLock!: boolean
 
   contextMenuState: any = {
     open: false,

@@ -8,7 +8,7 @@ const manifest: PluginManifest = {
   defaultContainer: 2,
   defaultPosition: 8,
   isAvailable: (store) => store.getters['printer/getSupportsAfc'],
-  minRole: 'guest',
+  minRole: 'user',
   tags: ['afc', 'multi-material']
 }
 

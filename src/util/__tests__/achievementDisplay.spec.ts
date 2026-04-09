@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { AchievementDefinition, AchievementProgress } from '@/types/achievement'
 import { formatAchievementDescription, getAchievementNextTarget } from '@/util/achievementDisplay'
+import { DEFAULT_CALIBRATION_GUIDE_CONFIG } from '@/util/calibrationGuideRuntime'
 
 const tieredDef: AchievementDefinition = {
   id: 'prints_completed',
@@ -56,9 +57,39 @@ describe('achievementDisplay', () => {
       category: 'klipper',
       rarity: 'common',
       points: 10,
-      calibrationGuide: { steps: [{ title: 'a', summary: '', docUrl: 'u', triggerCommands: ['X'], suggestedCommands: { direct: [], bowden: [] } }, { title: 'b', summary: '', docUrl: 'u', triggerCommands: ['Y'], suggestedCommands: { direct: [], bowden: [] } }] }
+      calibrationGuide: {
+        steps: [
+          { key: 'a', title: 'a', summary: '', docUrl: 'u', triggerCommands: ['X'], suggestedCommands: { direct: [], bowden: [] } },
+          { key: 'b', title: 'b', summary: '', docUrl: 'u', triggerCommands: ['Y'], suggestedCommands: { direct: [], bowden: [] } }
+        ]
+      }
     }
-    const p: AchievementProgress = { current: 1, tierReached: 0, calibrationStepsComplete: [0] }
+    const p: AchievementProgress = {
+      current: 1,
+      tierReached: 0,
+      calibrationGuideConfigSaved: true,
+      calibrationGuideConfig: DEFAULT_CALIBRATION_GUIDE_CONFIG,
+      calibrationStepsComplete: ['a']
+    }
     expect(formatAchievementDescription(guideDef, p)).toBe('Do the thing — 1/2 steps')
+  })
+
+  it('calibration guide prompts for setup before save', () => {
+    const guideDef: AchievementDefinition = {
+      id: 'g2',
+      name: 'Guide',
+      description: 'Do the thing',
+      icon: '$cog',
+      category: 'klipper',
+      rarity: 'common',
+      points: 10,
+      calibrationGuide: {
+        steps: [
+          { key: 'a', title: 'a', summary: '', docUrl: 'u', triggerCommands: ['X'], suggestedCommands: { direct: [], bowden: [] } }
+        ]
+      }
+    }
+    const p: AchievementProgress = { current: 0, tierReached: 0 }
+    expect(formatAchievementDescription(guideDef, p)).toBe('Do the thing — save your printer setup to start')
   })
 })

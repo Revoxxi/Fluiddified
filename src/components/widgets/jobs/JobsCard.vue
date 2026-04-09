@@ -24,7 +24,7 @@
       roots="gcodes"
       name="jobs"
       bulk-actions
-      :read-only-filesystem="guestMode"
+      :read-only-filesystem="filesystemReadOnly"
       class="full-screen"
     />
 
@@ -33,27 +33,33 @@
       roots="gcodes"
       name="dashboard"
       dense
-      :read-only-filesystem="guestMode"
+      :read-only-filesystem="filesystemReadOnly"
       class="partial-screen"
     />
   </collapsable-card>
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator'
+import { Component, Mixins, Prop } from 'vue-property-decorator'
 import FileSystem from '@/components/widgets/filesystem/FileSystem.vue'
+import AuthMixin from '@/mixins/auth'
 
 @Component({
   components: {
     FileSystem
   }
 })
-export default class JobsCard extends Vue {
+export default class JobsCard extends Mixins(AuthMixin) {
   @Prop({ type: Boolean })
   readonly fullscreen?: boolean
 
+  /** Operators and guests: no delete/move/upload; owners have full file actions. */
+  get filesystemReadOnly (): boolean {
+    return !this.isOwner
+  }
+
   get guestMode (): boolean {
-    return this.$typedGetters['auth/isGuest']
+    return this.isGuest
   }
 }
 </script>

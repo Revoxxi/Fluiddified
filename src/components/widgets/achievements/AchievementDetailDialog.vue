@@ -57,50 +57,121 @@
             Unlocked {{ formatDate(progress?.unlockedAt) }}
           </div>
 
-          <div class="text-subtitle-2 mb-1">
-            Extruder setup
-          </div>
-          <p class="text-caption text--secondary mb-2">
-            Pick your setup for example starting G-code (still verify on your hardware).
-          </p>
-          <v-radio-group
-            :value="extruderMode"
-            row
-            hide-details
-            dense
-            class="mt-0"
-            @change="onExtruderModeChange"
+          <div
+            v-if="!guideSetupSaved || configPanelExpanded"
+            class="achievement-detail-dialog__setup mb-4"
           >
-            <v-radio
-              label="Direct drive"
-              value="direct"
-            />
-            <v-radio
-              label="Bowden"
-              value="bowden"
-            />
-          </v-radio-group>
+            <div class="text-subtitle-2 mb-1">
+              Printer setup
+            </div>
+            <p class="text-caption text--secondary mb-3">
+              Choose how you level the bed, your extruder path, and nozzle size. Example commands update
+              after you save (still verify on your hardware).
+            </p>
 
-          <v-divider class="my-3" />
+            <div class="text-caption font-weight-medium mb-1">
+              Extruder
+            </div>
+            <v-radio-group
+              v-model="draftConfig.extruderMode"
+              row
+              hide-details
+              dense
+              class="mt-0 mb-3"
+            >
+              <v-radio
+                label="Direct drive"
+                value="direct"
+              />
+              <v-radio
+                label="Bowden"
+                value="bowden"
+              />
+            </v-radio-group>
 
-          <div class="achievement-detail-dialog__steps">
+            <div class="text-caption font-weight-medium mb-1">
+              Bed leveling
+            </div>
+            <v-radio-group
+              v-model="draftConfig.bedLeveling"
+              row
+              hide-details
+              dense
+              class="mt-0 mb-3"
+            >
+              <v-radio
+                label="Probe / mesh only"
+                value="probe"
+              />
+              <v-radio
+                label="Manual bed screws"
+                value="screws"
+              />
+            </v-radio-group>
+
+            <div class="text-caption font-weight-medium mb-1">
+              Nozzle diameter
+            </div>
+            <v-select
+              v-model.number="draftNozzleMm"
+              :items="nozzlePresets"
+              dense
+              outlined
+              hide-details
+              class="mb-3"
+            />
+
+            <div class="d-flex flex-wrap align-center">
+              <app-btn
+                class="mr-2"
+                @click="saveCalibrationSetup"
+              >
+                Save setup
+              </app-btn>
+              <app-btn
+                v-if="guideSetupSaved && configPanelExpanded"
+                text
+                @click="cancelCalibrationSetupEdit"
+              >
+                Cancel
+              </app-btn>
+            </div>
+          </div>
+
+          <div
+            v-else
+            class="d-flex flex-wrap align-center mb-4"
+          >
+            <span class="text-body-2 mr-3">{{ setupSummary }}</span>
+            <app-btn
+              small
+              @click="configPanelExpanded = true"
+            >
+              Change setup
+            </app-btn>
+          </div>
+
+          <div
+            v-if="guideSetupSaved && !configPanelExpanded"
+            class="achievement-detail-dialog__steps"
+          >
             <div
-              v-for="(step, idx) in guideSteps"
-              :key="idx"
+              v-for="(step, idx) in activeGuideSteps"
+              :key="step.key"
               class="mb-4"
             >
               <div class="d-flex align-center mb-1">
                 <v-icon
                   x-small
-                  :color="calibrationStepDone(idx) ? 'success' : 'grey'"
+                  :color="calibrationStepDone(step.key) ? 'success' : 'grey'"
                   class="mr-2"
                 >
-                  {{ calibrationStepDone(idx) ? '$check' : '$circle' }}
+                  {{ calibrationStepDone(step.key) ? '$check' : '$circle' }}
                 </v-icon>
-                <span class="text-subtitle-2">{{ idx + 1 }}. {{ step.title }}</span>
+                <span class="text-subtitle-2">{{ idx + 1 }}. {{ stepTitle(step) }}</span>
               </div>
               <p class="text-body-2 mb-2">
-                {{ step.summary }}
+                {{ stepSummary(step) }}
               </p>
               <p
                 v-if="step.methodTip"
@@ -143,7 +214,7 @@
                   @click="copyGcodeLine(line)"
                 >
                   <v-icon x-small>
-                    {{ $globals.Icons.contentCopy }}
+                    $contentCopy
                   </v-icon>
                 </v-btn>
               </div>
@@ -238,17 +309,25 @@
 </template>
 
 <script lang="ts">
-import { Component, Prop, Vue } from 'vue-property-decorator'
+import { Component, Prop, Vue, Watch } from 'vue-property-decorator'
 import type {
   AchievementDefinition,
   AchievementProgress,
   AchievementRarity,
-  CalibrationExtruderMode,
-  CalibrationGuideStep
+  CalibrationGuideStep,
+  CalibrationGuideUserConfig
 } from '@/types/achievement'
 import { EventBus } from '@/eventBus'
 import { formatAchievementDescription } from '@/util/achievementDisplay'
 import clipboardCopy from '@/util/clipboard-copy'
+import {
+  DEFAULT_CALIBRATION_GUIDE_CONFIG,
+  getActiveCalibrationSteps,
+  getCalibrationStepSummary,
+  getCalibrationStepTitle,
+  getSuggestedLinesForStep,
+  normalizeCalibrationStepsComplete
+} from '@/util/calibrationGuideRuntime'
 import AchievementRarityBadge from './AchievementRarityBadge.vue'
 
 const rarityColors: Record<AchievementRarity, string> = {
@@ -273,6 +352,29 @@ export default class AchievementDetailDialog extends Vue {
 
   @Prop({ type: Object, default: undefined })
   readonly progress?: AchievementProgress
+
+  draftConfig: CalibrationGuideUserConfig = { ...DEFAULT_CALIBRATION_GUIDE_CONFIG }
+
+  configPanelExpanded = false
+
+  readonly nozzlePresets = [0.25, 0.4, 0.6, 0.8]
+
+  get draftNozzleMm (): number {
+    return this.draftConfig.nozzleSizeMm
+  }
+
+  set draftNozzleMm (v: number) {
+    this.draftConfig.nozzleSizeMm = v
+  }
+
+  @Watch('value')
+  onDialogOpen (open: boolean): void {
+    if (!open) return
+    this.draftConfig = {
+      ...(this.progress?.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG)
+    }
+    this.configPanelExpanded = this.progress?.calibrationGuideConfigSaved !== true
+  }
 
   get isUnlocked (): boolean {
     if (this.definition.tiers) {
@@ -350,22 +452,40 @@ export default class AchievementDetailDialog extends Vue {
     return !this.secretLocked && this.definition.calibrationGuide != null
   }
 
-  get guideSteps (): CalibrationGuideStep[] {
-    return this.definition.calibrationGuide?.steps ?? []
+  get guideSetupSaved (): boolean {
+    return this.progress?.calibrationGuideConfigSaved === true
   }
 
-  get extruderMode (): CalibrationExtruderMode {
-    return this.progress?.calibrationExtruderMode ?? 'direct'
+  get savedGuideConfig (): CalibrationGuideUserConfig {
+    return this.progress?.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG
   }
 
-  calibrationStepDone (idx: number): boolean {
-    return this.progress?.calibrationStepsComplete?.includes(idx) ?? false
+  get setupSummary (): string {
+    const c = this.savedGuideConfig
+    const bed = c.bedLeveling === 'probe' ? 'Probe bed' : 'Bed screws'
+    const ex = c.extruderMode === 'direct' ? 'Direct drive' : 'Bowden'
+    return `${ex} · ${bed} · ${String(c.nozzleSizeMm)} mm nozzle`
+  }
+
+  get activeGuideSteps (): CalibrationGuideStep[] {
+    if (!this.definition.calibrationGuide) return []
+    return getActiveCalibrationSteps(this.definition.calibrationGuide.steps, this.savedGuideConfig)
+  }
+
+  stepTitle (step: CalibrationGuideStep): string {
+    return getCalibrationStepTitle(step, this.savedGuideConfig)
+  }
+
+  stepSummary (step: CalibrationGuideStep): string {
+    return getCalibrationStepSummary(step, this.savedGuideConfig)
+  }
+
+  calibrationStepDone (key: string): boolean {
+    return normalizeCalibrationStepsComplete(this.progress?.calibrationStepsComplete).includes(key)
   }
 
   suggestedLines (step: CalibrationGuideStep): string[] {
-    return this.extruderMode === 'bowden'
-      ? step.suggestedCommands.bowden
-      : step.suggestedCommands.direct
+    return getSuggestedLinesForStep(step, this.savedGuideConfig)
   }
 
   copyableGcodeLine (line: string): boolean {
@@ -380,14 +500,29 @@ export default class AchievementDetailDialog extends Vue {
     }
   }
 
-  onExtruderModeChange (mode: string) {
-    if (mode !== 'direct' && mode !== 'bowden') return
+  saveCalibrationSetup (): void {
+    const config: CalibrationGuideUserConfig = {
+      extruderMode: this.draftConfig.extruderMode,
+      bedLeveling: this.draftConfig.bedLeveling,
+      nozzleSizeMm: Number(this.draftConfig.nozzleSizeMm)
+    }
     Promise.resolve(
-      this.$typedDispatch('achievements/setCalibrationExtruderMode', {
+      this.$typedDispatch('achievements/saveCalibrationGuideConfig', {
         id: this.definition.id,
-        mode
+        config
       })
-    ).catch(() => undefined)
+    )
+      .then(() => {
+        this.configPanelExpanded = false
+      })
+      .catch(() => undefined)
+  }
+
+  cancelCalibrationSetupEdit (): void {
+    this.draftConfig = {
+      ...(this.progress?.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG)
+    }
+    this.configPanelExpanded = false
   }
 }
 </script>
