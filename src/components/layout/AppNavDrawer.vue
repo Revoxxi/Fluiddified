@@ -64,7 +64,7 @@
           </app-nav-item>
 
           <app-nav-item
-            v-if="hasRouteAccess('user')"
+            v-if="hasRouteAccess('owner')"
             icon="$tune"
             to="tune"
           >

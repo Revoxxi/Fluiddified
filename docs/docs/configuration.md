@@ -241,6 +241,8 @@ gcode:
 Moonraker is the API that Fluiddified communicates with, which in turn communicates
 with Klipper. All three components are required for a healthy printer.
 
+If you use **nginx** (or another reverse proxy) in front of Moonraker, HTTP may work while **WebSockets** fail unless the proxy forwards upgrade headers. See **[Reverse proxy (nginx)](reverse-proxy-nginx.md)** for required directives and verification steps.
+
 For the full configuration reference, see the
 [Moonraker documentation](https://moonraker.readthedocs.io/en/latest/configuration/).
 

@@ -143,7 +143,7 @@
             </v-list-item>
 
             <v-list-item
-              v-if="!Array.isArray(file) && !rootProperties.readonly && !lockMutations"
+              v-if="!Array.isArray(file) && !rootProperties.readonly && !lockOwnerMutations"
               @click="$emit('rename', file)"
             >
               <v-list-item-icon>
@@ -155,7 +155,7 @@
             </v-list-item>
 
             <v-list-item
-              v-if="!Array.isArray(file) && !rootProperties.readonly && !lockMutations"
+              v-if="!Array.isArray(file) && !rootProperties.readonly && !lockOwnerMutations"
               @click="$emit('duplicate', file)"
             >
               <v-list-item-icon>
@@ -167,7 +167,7 @@
             </v-list-item>
 
             <v-list-item
-              v-if="!rootProperties.readonly && !lockMutations"
+              v-if="!rootProperties.readonly && !lockOwnerMutations"
               @click="$emit('remove', file)"
             >
               <v-list-item-icon>
@@ -227,8 +227,9 @@ export default class FileSystemContextMenu extends Mixins(StateMixin, FilesMixin
   @Prop({ type: Number, required: true })
   readonly positionY!: number
 
+  /** When true, hide rename/duplicate/remove/zip and config edit (Fluidd owner file-tree mutations). */
   @Prop({ type: Boolean })
-  readonly lockMutations?: boolean
+  readonly lockOwnerMutations?: boolean
 
   get rootProperties (): RootProperties {
     return this.$typedGetters['files/getRootProperties'](this.root)
@@ -245,7 +246,7 @@ export default class FileSystemContextMenu extends Mixins(StateMixin, FilesMixin
 
   get canEdit () {
     return (
-      this.lockMutations !== true &&
+      this.lockOwnerMutations !== true &&
       !Array.isArray(this.file) &&
       this.file.type !== 'directory' &&
       (
@@ -295,7 +296,7 @@ export default class FileSystemContextMenu extends Mixins(StateMixin, FilesMixin
 
   get canCreateZip (): boolean {
     return (
-      this.lockMutations !== true &&
+      this.lockOwnerMutations !== true &&
       (
         Array.isArray(this.file) ||
         this.file.type !== 'file' ||

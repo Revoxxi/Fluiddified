@@ -15,6 +15,7 @@ nav = [
   {"Home" = "index.md"},
   {"Getting Started" = "getting-started.md"},
   {"Configuration" = "configuration.md"},
+  {"Reverse proxy (nginx)" = "reverse-proxy-nginx.md"},
   {"Customize" = "customize.md"},
   {"Features" = [
     "features/index.md",

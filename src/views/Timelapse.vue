@@ -11,8 +11,8 @@
         <file-system
           :roots="'timelapse'"
           name="timelapse"
-          :bulk-actions="!isGuest"
-          :readonly="isGuest"
+          :bulk-actions="isOwner"
+          :read-only-filesystem="!isOwner"
           class="full-screen"
         />
       </collapsable-card>

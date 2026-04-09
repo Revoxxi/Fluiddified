@@ -65,7 +65,7 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig,
     meta: {
       ...defaultRouteConfig.meta,
-      minRole: 'user' as Role
+      minRole: 'owner' as Role
     }
   },
   {

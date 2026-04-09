@@ -7,7 +7,10 @@
     layout-path="dashboard.job-queue-card"
     :help-tooltip="$t('app.job_queue.tooltip.help')"
   >
-    <template #menu>
+    <template
+      v-if="!guestMode"
+      #menu
+    >
       <app-btn-collapse-group :collapsed="narrow">
         <app-btn
           v-if="['ready','loading','starting'].includes(queueState)"
@@ -55,7 +58,8 @@
 
     <job-queue
       :dense="!fullscreen"
-      :bulk-actions="fullscreen"
+      :bulk-actions="fullscreen && !guestMode"
+      :guest-mode="guestMode"
       :class="{
         'full-screen': fullscreen,
         'partial-screen': !fullscreen
@@ -65,21 +69,26 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue, Prop } from 'vue-property-decorator'
+import { Component, Prop, Mixins } from 'vue-property-decorator'
 import JobQueue from '@/components/widgets/job-queue/JobQueue.vue'
 import { SocketActions } from '@/api/socketActions'
+import AuthMixin from '@/mixins/auth'
 
 @Component({
   components: {
     JobQueue
   }
 })
-export default class JobQueueCard extends Vue {
+export default class JobQueueCard extends Mixins(AuthMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
 
   @Prop({ type: Boolean })
   readonly fullscreen?: boolean
+
+  get guestMode (): boolean {
+    return this.isGuest
+  }
 
   get queueState (): Moonraker.JobQueue.QueueState {
     return this.$typedState.jobQueue.queueState

@@ -55,7 +55,7 @@
     >
       <app-btn-collapse-group :collapsed="narrow">
         <app-btn
-          v-if="isManualProbeActive"
+          v-if="isOwner && isManualProbeActive"
           :disabled="!klippyReady || printerPrinting"
           small
           class="me-1 my-1"
@@ -65,7 +65,7 @@
         </app-btn>
 
         <app-btn
-          v-if="isBedScrewsAdjustActive"
+          v-if="isOwner && isBedScrewsAdjustActive"
           :disabled="!klippyReady || printerPrinting || !allHomed"
           small
           class="me-1 my-1"
@@ -75,7 +75,7 @@
         </app-btn>
 
         <app-btn
-          v-if="printerSupportsForceMove"
+          v-if="isOwner && printerSupportsForceMove"
           :disabled="!klippyReady || printerPrinting"
           small
           class="me-1 my-1"
@@ -86,7 +86,7 @@
         </app-btn>
 
         <app-btn
-          v-if="hasSteppersEnabled"
+          v-if="!guestMode && hasSteppersEnabled"
           :disabled="!klippyReady || printerPrinting"
           small
           class="me-1 my-1"
@@ -96,7 +96,7 @@
         </app-btn>
 
         <v-menu
-          v-if="availableTools.length"
+          v-if="isOwner && availableTools.length"
           left
           offset-y
           transition="slide-y-transition"

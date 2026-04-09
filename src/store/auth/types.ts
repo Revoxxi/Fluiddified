@@ -21,7 +21,11 @@ export interface AuthState {
   users: AppUser[];
   apiKey: string;
   roles: UserRoleMap;
-  /** From Moonraker GET /access/info when the client is a trusted client (e.g. LAN). */
+  /**
+   * From Moonraker GET /access/info `trusted` (e.g. LAN classification).
+   * Used only for **connection / first-user setup** (see `shouldConnectSocket`, `auth/actions` probes).
+   * Does **not** change Fluidd roles, `hasPermission`, or any control when `uiSessionActive`.
+   */
   moonrakerTrusted: boolean;
   /** From Moonraker GET /access/info `login_required` (e.g. force_logins). When true, trust must not bypass Fluidd session for the socket or default roles. */
   moonrakerLoginRequired: boolean;

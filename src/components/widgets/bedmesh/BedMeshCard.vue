@@ -9,7 +9,7 @@
   >
     <template #menu>
       <app-btn
-        v-if="!fullscreen && !guestMode"
+        v-if="!fullscreen && !guestMode && isOwner"
         small
         class="me-1 my-1"
         :loading="hasWait($waits.onMeshCalibrate)"
@@ -37,7 +37,7 @@
       </v-tooltip>
 
       <app-btn
-        v-if="!fullscreen"
+        v-if="!fullscreen && isOwner"
         icon
         @click="$filters.routeTo({ name: 'tune' })"
       >
@@ -66,6 +66,7 @@
 import { Component, Mixins, Prop, Ref } from 'vue-property-decorator'
 import BedMeshChart from './BedMeshChart.vue'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import ToolheadMixin from '@/mixins/toolhead'
 import BrowserMixin from '@/mixins/browser'
 import type { AppMeshes, MatrixType } from '@/store/mesh/types'
@@ -75,7 +76,7 @@ import type { AppMeshes, MatrixType } from '@/store/mesh/types'
     BedMeshChart
   }
 })
-export default class BedMeshCard extends Mixins(StateMixin, ToolheadMixin, BrowserMixin) {
+export default class BedMeshCard extends Mixins(StateMixin, AuthMixin, ToolheadMixin, BrowserMixin) {
   @Prop({ type: Boolean })
   readonly fullscreen?: boolean
 

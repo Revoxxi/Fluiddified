@@ -14,13 +14,13 @@
             <toolhead-control-bars v-else-if="toolheadControlStyle === 'bars'" />
             <toolhead-control-circle v-else-if="toolheadControlStyle === 'circle'" />
           </template>
-          <z-height-adjust v-else />
+          <z-height-adjust v-else-if="isOwner" />
         </v-col>
 
         <v-col class="controls-wrapper">
           <toolhead-position />
           <extruder-moves v-if="!printerPrinting && hasExtruder" />
-          <z-height-adjust v-if="!printerPrinting" />
+          <z-height-adjust v-if="!printerPrinting && isOwner" />
         </v-col>
       </v-row>
     </v-card-text>
@@ -33,18 +33,19 @@
       <v-divider />
     </template>
 
-    <v-card-text>
+    <v-card-text v-if="isOwner">
       <speed-and-flow-adjust />
       <pressure-advance-adjust v-if="showPressureAdvance" />
     </v-card-text>
 
-    <extruder-steppers />
+    <extruder-steppers v-if="isOwner" />
   </div>
 </template>
 
 <script lang="ts">
 import { Component, Mixins, Prop } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import ToolheadMixin from '@/mixins/toolhead'
 import ToolheadControlCross from './ToolheadControlCross.vue'
 import ToolheadControlBars from './ToolheadControlBars.vue'
@@ -76,7 +77,7 @@ import type { ToolheadControlStyle } from '@/store/config/types'
     ToolChangeCommands
   }
 })
-export default class Toolhead extends Mixins(StateMixin, ToolheadMixin) {
+export default class Toolhead extends Mixins(StateMixin, AuthMixin, ToolheadMixin) {
   @Prop({ type: Boolean, default: false })
   readonly guestMode!: boolean
 
@@ -96,7 +97,7 @@ export default class Toolhead extends Mixins(StateMixin, ToolheadMixin) {
     max-width: 450px !important;
   }
 
-  /* Guest role: block toolhead interactions (trusted LAN does not bypass Fluidd role). */
+  /* Guest role: block toolhead interactions (RBAC uses role only once authenticated). */
   .guest-toolhead-disabled ::v-deep button,
   .guest-toolhead-disabled ::v-deep .v-btn,
   .guest-toolhead-disabled ::v-deep input,

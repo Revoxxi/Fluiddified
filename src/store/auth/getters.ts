@@ -35,15 +35,18 @@ export const getters = {
     }
     const sole = soleMoonrakerUsername(state)
     if (sole === username) return 'owner'
-    // When Moonraker requires login, unknown Fluidd rows default to guest so trusted LAN
-    // never implies operator until an owner assigns a role.
+    // When Moonraker requires login, unknown Fluidd rows default to guest until an owner
+    // assigns a role (`moonrakerTrusted` does not elevate this for authenticated users).
     if (state.moonrakerLoginRequired) return 'guest'
     return 'user'
   },
 
   /**
-   * Open WebSocket without a Fluidd JWT only when Moonraker does not require login;
-   * otherwise trusted LAN must not bypass RBAC.
+   * Whether the app may open the Moonraker WebSocket (bootstrap / idle connection).
+   * - With a Fluidd JWT session (`uiSessionActive`), always allow when API is up.
+   * - Without login, allow when the HTTP API is reachable **or** Moonraker marks the client
+   *   trusted (first-user / LAN setup only). This does **not** grant widget or socket method
+   *   permissions; `getCurrentRole` and `checkMethodPermission` ignore `moonrakerTrusted`.
    */
   shouldConnectSocket: (state, getters) => (opts: {
     apiConnected: boolean

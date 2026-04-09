@@ -150,7 +150,7 @@
           <!--- Z Center -->
           <g>
             <a
-              v-if="printerSupportsLeveling"
+              v-if="printerSupportsLeveling && isOwner"
               class="cc-btn"
               :class="levelingClasses"
               @click="sendLevelingGcode"
@@ -521,12 +521,13 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import ToolheadMixin from '@/mixins/toolhead'
+import AuthMixin from '@/mixins/auth'
 import type { BedSize, KlippyApp } from '@/store/printer/types'
 
 type Axis = 'X' | 'Y' | 'Z'
 
 @Component({})
-export default class ToolheadControlCircle extends Mixins(StateMixin, ToolheadMixin) {
+export default class ToolheadControlCircle extends Mixins(StateMixin, ToolheadMixin, AuthMixin) {
   get enableXYHoming (): boolean {
     return this.$typedState.config.uiSettings.general.toolheadCircleXYHomingEnabled
   }
@@ -722,6 +723,8 @@ export default class ToolheadControlCircle extends Mixins(StateMixin, ToolheadMi
   }
 
   sendLevelingGcode () {
+    if (!this.isOwner) return
+
     if (this.printerSupportsQuadGantryLevel) {
       this.sendGcode('QUAD_GANTRY_LEVEL', this.$waits.onQGL)
     } else if (this.printerSupportsZTiltAdjust) {

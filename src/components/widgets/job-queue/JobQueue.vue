@@ -9,14 +9,14 @@
     @drop.self.prevent="handleDrop"
   >
     <job-queue-toolbar
-      v-if="selected.length === 0"
+      v-if="selected.length === 0 && !guestMode"
       :headers="configurableHeaders"
       @remove-all="handleRemoveAll"
       @refresh="handleRefresh"
     />
 
     <job-queue-bulk-actions
-      v-else
+      v-else-if="!guestMode"
       @remove="handleRemove(selected)"
       @multiply="handleMultiplyDialog(selected)"
     />
@@ -38,7 +38,7 @@
     />
 
     <job-queue-context-menu
-      v-if="contextMenuState.open"
+      v-if="contextMenuState.open && !guestMode"
       v-model="contextMenuState.open"
       :job="contextMenuState.job"
       :position-x="contextMenuState.x"
@@ -100,6 +100,9 @@ export default class JobQueue extends Vue {
   @Prop({ type: Boolean })
   readonly bulkActions?: boolean
 
+  @Prop({ type: Boolean, default: false })
+  readonly guestMode!: boolean
+
   get jobs (): QueuedJobWithAppFile[] {
     this.selected = []
 
@@ -153,6 +156,9 @@ export default class JobQueue extends Vue {
   }
 
   handleRowClick (item: QueuedJobWithAppFile, event: MouseEvent) {
+    if (this.guestMode) {
+      return
+    }
     if (this.contextMenuState.open) {
       this.contextMenuState.open = false
 
@@ -221,6 +227,9 @@ export default class JobQueue extends Vue {
   }
 
   handleDragOver (event: DragEvent) {
+    if (this.guestMode) {
+      return
+    }
     if (
       event.dataTransfer &&
       hasFileDataTransferTypeInDataTransfer(event.dataTransfer, 'jobs')
@@ -240,6 +249,9 @@ export default class JobQueue extends Vue {
   handleDrop (event: DragEvent) {
     this.overlay = false
 
+    if (this.guestMode) {
+      return
+    }
     if (
       event.dataTransfer &&
       hasFileDataTransferTypeInDataTransfer(event.dataTransfer, 'jobs')

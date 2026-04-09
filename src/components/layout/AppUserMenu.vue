@@ -109,6 +109,10 @@ export default class AppNotificationMenu extends Vue {
     }
   }
 
+  /**
+   * Pre-login / API-key placeholder identities: hide password & logout UX only.
+   * Not a permission elevation; authenticated Moonraker JWT users use normal RBAC.
+   */
   get isTrustedOnly () {
     if (!this.user) return false
     return (

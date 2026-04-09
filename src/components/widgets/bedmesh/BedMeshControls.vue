@@ -7,7 +7,7 @@
     <template #menu>
       <app-btn-collapse-group>
         <app-btn
-          v-if="isManualProbeActive"
+          v-if="isOwner && isManualProbeActive"
           :disabled="!klippyReady || printerPrinting"
           small
           class="me-1 my-1"
@@ -56,7 +56,7 @@
               nowrap
             >
               <v-tooltip
-                v-if="!item.active"
+                v-if="!item.active && isOwner"
                 bottom
               >
                 <template #activator="{ on, attrs }">
@@ -74,7 +74,10 @@
                 <span>{{ $t('app.bedmesh.tooltip.load') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom>
+              <v-tooltip
+                v-if="isOwner"
+                bottom
+              >
                 <template #activator="{ on, attrs }">
                   <app-btn
                     v-bind="attrs"
@@ -108,6 +111,7 @@
       <v-row>
         <v-col cols="6">
           <app-btn
+            v-if="isOwner"
             :disabled="!meshLoaded"
             small
             block
@@ -117,7 +121,10 @@
             {{ $t('app.general.btn.clear_profile') }}
           </app-btn>
 
-          <v-tooltip bottom>
+          <v-tooltip
+            v-if="isOwner"
+            bottom
+          >
             <template #activator="{ on, attrs }">
               <app-btn
                 v-bind="attrs"
@@ -135,7 +142,10 @@
             <span>{{ $t(`app.bedmesh.tooltip.calibrate`) }}</span>
           </v-tooltip>
 
-          <v-tooltip bottom>
+          <v-tooltip
+            v-if="isOwner"
+            bottom
+          >
             <template #activator="{ on, attrs }">
               <app-btn
                 v-bind="attrs"
@@ -154,6 +164,7 @@
         </v-col>
         <v-col cols="6">
           <app-btn
+            v-if="!isGuest"
             block
             small
             class="mb-2"
@@ -171,7 +182,7 @@
           </app-btn>
 
           <app-btn
-            v-if="printerSupportsQgl"
+            v-if="isOwner && printerSupportsQgl"
             :loading="hasWait($waits.onQGL)"
             :disabled="printerBusy"
             block
@@ -271,6 +282,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import SaveMeshDialog from './SaveMeshDialog.vue'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import ToolheadMixin from '@/mixins/toolhead'
 import type {
   MeshState,
@@ -284,7 +296,7 @@ import { encodeGcodeParamValue } from '@/util/gcode-helpers'
     SaveMeshDialog
   }
 })
-export default class BedMesh extends Mixins(StateMixin, ToolheadMixin) {
+export default class BedMesh extends Mixins(StateMixin, AuthMixin, ToolheadMixin) {
   mapScaleLabels = ['min', '0.1', '0.2']
   boxScaleLabels = ['1.0', '1.5', '2.0']
 

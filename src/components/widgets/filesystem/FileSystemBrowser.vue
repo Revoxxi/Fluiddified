@@ -161,7 +161,7 @@ export default class FileSystemBrowser extends Mixins(FilesMixin) {
   readonly bulkActions?: boolean
 
   @Prop({ type: Boolean })
-  readonly lockMutations?: boolean
+  readonly lockOwnerMutations?: boolean
 
   dragItem: FileBrowserEntry | null = null
   ghost?: HTMLDivElement = undefined
@@ -334,7 +334,7 @@ export default class FileSystemBrowser extends Mixins(FilesMixin) {
   // Determines if a row is currently in a draggable state or not.
   isItemDraggable (item: FileBrowserEntry) {
     return (
-      !this.lockMutations &&
+      !this.lockOwnerMutations &&
       this.filesAndFoldersDragAndDrop &&
       item.name !== '..' &&
       this.files.length > 0 &&

@@ -189,8 +189,9 @@ export default class FileSystemToolbar extends Mixins(StatesMixin) {
   @Prop({ type: Boolean })
   readonly disabled?: boolean
 
+  /** When true, hide add/upload (no `Permissions.FILE_UPLOAD`). */
   @Prop({ type: Boolean })
-  readonly lockMutations?: boolean
+  readonly lockUploads?: boolean
 
   // If the fs is loading or not.
   @Prop({ type: Boolean })
@@ -200,7 +201,7 @@ export default class FileSystemToolbar extends Mixins(StatesMixin) {
   searchModel!: string
 
   get readonly () {
-    return this.rootProperties.readonly || this.lockMutations === true
+    return this.rootProperties.readonly || this.lockUploads === true
   }
 
   get canConfigure () {

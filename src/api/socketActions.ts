@@ -3,9 +3,10 @@ import { Globals, Waits } from '@/globals'
 import type { NotifyOptions } from '@/plugins/socketClient'
 import {
   alwaysAllowSocketMethods,
-  ownerOrTrustedLanSocketMethods,
+  ownerOnlyMoonrakerAccountSocketMethods,
   socketMethodMinRole
 } from '@/api/socketMethodAccess'
+import { isOperatorGcodeScriptAllowed } from '@/api/gcodeScriptPolicy'
 import { consola } from 'consola'
 import type { Role } from '@/types/auth'
 import { RoleHierarchy } from '@/types/auth'
@@ -24,18 +25,20 @@ const checkMethodPermission = (method: string): boolean => {
 
   if (alwaysAllowSocketMethods.has(method)) return true
 
-  if (ownerOrTrustedLanSocketMethods.has(method)) {
+  if (ownerOnlyMoonrakerAccountSocketMethods.has(method)) {
     const ok = _store.getters['auth/canManageMoonrakerAccounts'] === true
     if (!ok) {
-      consola.warn(`Permission denied: ${method} requires owner role or trusted LAN session`)
+      consola.warn(`Permission denied: ${method} requires Fluidd owner role`)
       EventBus.$emit('Permission denied', { type: 'warning', timeout: 3000 })
     }
     return ok
   }
 
   const minRole = socketMethodMinRole[method]
-  if (!minRole) {
-    return true
+  if (minRole === undefined) {
+    consola.warn(`Permission denied: unregistered socket method ${method}`)
+    EventBus.$emit('Permission denied', { type: 'warning', timeout: 3000 })
+    return false
   }
 
   const currentRole: Role = _store.getters['auth/getCurrentRole']
@@ -456,6 +459,15 @@ export const SocketActions = {
   },
 
   printerGcodeScript (gcode: string, options?: NotifyOptions) {
+    if (_store) {
+      const role = _store.getters['auth/getCurrentRole'] as Role
+      if (role === 'user' && !isOperatorGcodeScriptAllowed(gcode)) {
+        consola.warn('Permission denied: operator G-code blocked by Fluidd policy')
+        EventBus.$emit('Permission denied', { type: 'warning', timeout: 4000 })
+        throw new Error('Permission denied')
+      }
+    }
+
     return baseEmit<Moonraker.OkResponse>(
       'printer.gcode.script', {
         dispatch: 'console/onGcodeScript',

@@ -105,9 +105,9 @@
         <spool-selection-dialog />
         <action-command-prompt-dialog />
         <keyboard-shortcuts-dialog />
-        <manual-probe-dialog />
-        <bed-screws-adjust-dialog />
-        <screws-tilt-adjust-dialog />
+        <manual-probe-dialog v-if="isOwner" />
+        <bed-screws-adjust-dialog v-if="isOwner" />
+        <screws-tilt-adjust-dialog v-if="isOwner" />
         <mmu-edit-ttg-map-dialog />
       </template>
     </v-main>
@@ -224,6 +224,17 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
 
   get fileDropRoot () {
     return this.$route.meta?.fileDropRoot
+  }
+
+  /** Timelapse root uploads change host capture output; only owners may drop files there. */
+  get canAcceptFileDropOnCurrentRoute (): boolean {
+    if (!this.hasPermission(Permissions.FILE_UPLOAD)) {
+      return false
+    }
+    if (this.fileDropRoot === 'timelapse' && !this.isOwner) {
+      return false
+    }
+    return true
   }
 
   get progress (): number {
@@ -478,7 +489,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
     if (
       this.socketConnected &&
       this.uiSessionActive &&
-      this.hasPermission(Permissions.FILE_UPLOAD) &&
+      this.canAcceptFileDropOnCurrentRoute &&
       this.fileDropRoot &&
       event.dataTransfer &&
       hasFilesInDataTransfer(event.dataTransfer)
@@ -512,7 +523,7 @@ export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, Au
 
       this.dragState = false
 
-      if (!this.hasPermission(Permissions.FILE_UPLOAD)) {
+      if (!this.canAcceptFileDropOnCurrentRoute) {
         return
       }
 

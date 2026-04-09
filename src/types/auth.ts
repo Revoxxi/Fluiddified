@@ -1,3 +1,11 @@
+/**
+ * Fluidd RBAC (Moonraker JWT + Fluidd-stored roles per username).
+ * Moonraker “trusted client” / first-user setup (`auth/state.moonrakerTrusted`, login flows)
+ * does not change these permissions once a JWT session is active (`auth/uiSessionActive`).
+ * - **owner** — full UI, host/config, console, settings, calibration (Tune), Z-offset, bed mesh calibrate, file delete, etc.
+ * - **user** — operator: jog/extrude/M84 in tool widget, jobs, macros, diagnostics; no calibration UIs, Tune, system/configure/settings/console.
+ * - **guest** — spectator: view state only; UI disables controls; socket uses `socketMethodMinRole` in `api/socketMethodAccess.ts`.
+ */
 export type Role = 'owner' | 'user' | 'guest'
 
 export const RoleHierarchy: Record<Role, number> = {
@@ -24,6 +32,7 @@ export const Permissions = {
   MACRO_RUN: { id: 'macro.run', name: 'Run Macros', minRole: 'user' },
   MACRO_EDIT: { id: 'macro.edit', name: 'Edit Macros', minRole: 'owner' },
 
+  /** HTTP upload to Moonraker; paired with `FileSystem` `lockUploads` (operators + owners). */
   FILE_UPLOAD: { id: 'file.upload', name: 'Upload Files', minRole: 'user' },
   FILE_DELETE: { id: 'file.delete', name: 'Delete Files', minRole: 'owner' },
   FILE_EDIT: { id: 'file.edit', name: 'Edit Config Files', minRole: 'owner' },
@@ -39,7 +48,7 @@ export const Permissions = {
   CONSOLE_SEND: { id: 'console.send', name: 'Send Console Commands', minRole: 'owner' },
   CONSOLE_VIEW: { id: 'console.view', name: 'View Console', minRole: 'owner' },
 
-  SYSTEM_RESTART: { id: 'system.restart', name: 'Restart Services', minRole: 'owner' },
+  SYSTEM_RESTART: { id: 'system.restart', name: 'Restart Services', minRole: 'user' },
   SYSTEM_UPDATE: { id: 'system.update', name: 'Update Software', minRole: 'owner' },
   SYSTEM_POWER: { id: 'system.power', name: 'Power Devices', minRole: 'owner' },
 
@@ -65,7 +74,7 @@ export const Permissions = {
   RETRACT_SET: { id: 'retract.set', name: 'Set Retraction', minRole: 'user' },
 
   MESH_VIEW: { id: 'mesh.view', name: 'View Bed Mesh', minRole: 'guest' },
-  MESH_CALIBRATE: { id: 'mesh.calibrate', name: 'Calibrate Bed Mesh', minRole: 'user' },
+  MESH_CALIBRATE: { id: 'mesh.calibrate', name: 'Calibrate Bed Mesh', minRole: 'owner' },
 
   GCODE_PREVIEW: { id: 'gcode.preview', name: 'GCode Preview', minRole: 'guest' },
 

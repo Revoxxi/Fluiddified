@@ -16,6 +16,11 @@ export default class FilesMixin extends Vue {
     return this.$typedState.config.apiUrl
   }
 
+  /**
+   * Moonraker placeholder user when the API is accessed as a trusted client without a login.
+   * Used only for **pre-login** file URL behavior. When `auth/uiSessionActive`, callers must
+   * not treat this as an RBAC shortcut (see `createFileUrlWithToken`).
+   */
   get isTrustedUser (): boolean {
     const currentUser: AppUser | null = this.$typedState.auth.currentUser
 
@@ -180,10 +185,13 @@ export default class FilesMixin extends Vue {
 
   async createFileUrlWithToken (filename: string, path: string, date?: number) {
     const url = this.createFileUrl(filename, path, date)
+    const sessionActive = this.$typedGetters['auth/uiSessionActive'] as boolean
 
-    return this.isTrustedUser
-      ? url
-      : `${url}&token=${await SocketActions.accessOneshotToken()}`
+    if (sessionActive || !this.isTrustedUser) {
+      return `${url}&token=${await SocketActions.accessOneshotToken()}`
+    }
+
+    return url
   }
 
   /**

@@ -23,9 +23,10 @@
         </v-list-item-content>
       </v-list-item>
 
-      <v-divider />
+      <v-divider v-if="isOwner" />
 
       <v-list-item
+        v-if="isOwner"
         :disabled="!klippyReady || printerPrinting || heater.disconnected"
         @click="$emit('pid-calibrate', heater)"
       >
@@ -40,7 +41,7 @@
       </v-list-item>
 
       <v-list-item
-        v-if="klippyApp.isKalicoOrDangerKlipper"
+        v-if="isOwner && klippyApp.isKalicoOrDangerKlipper"
         :disabled="!klippyReady || printerPrinting || !heaterUsesMpcControl || heater.disconnected"
         @click="$emit('mpc-calibrate', heater)"
       >
@@ -60,10 +61,11 @@
 <script lang="ts">
 import { Component, Prop, VModel, Mixins } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import type { Heater, KlippyApp } from '@/store/printer/types'
 
 @Component({})
-export default class HeaterContextMenu extends Mixins(StateMixin) {
+export default class HeaterContextMenu extends Mixins(StateMixin, AuthMixin) {
   @VModel({ type: Boolean })
   open?: boolean
 

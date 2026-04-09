@@ -24,7 +24,7 @@
       roots="gcodes"
       name="jobs"
       bulk-actions
-      :readonly="guestMode"
+      :read-only-filesystem="guestMode"
       class="full-screen"
     />
 
@@ -33,7 +33,7 @@
       roots="gcodes"
       name="dashboard"
       dense
-      :readonly="guestMode"
+      :read-only-filesystem="guestMode"
       class="partial-screen"
     />
   </collapsable-card>

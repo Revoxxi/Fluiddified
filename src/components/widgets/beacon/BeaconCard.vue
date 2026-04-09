@@ -8,7 +8,7 @@
   >
     <template #menu>
       <app-btn
-        v-if="!fullscreen"
+        v-if="!fullscreen && isOwner"
         icon
         @click="$filters.routeTo({ name: 'tune' })"
       >
@@ -49,7 +49,7 @@
               nowrap
             >
               <v-tooltip
-                v-if="!item.active"
+                v-if="isOwner && !item.active"
                 bottom
               >
                 <template #activator="{ on, attrs }">
@@ -67,7 +67,10 @@
                 <span>{{ $t('app.beacon.tooltip.load') }}</span>
               </v-tooltip>
 
-              <v-tooltip bottom>
+              <v-tooltip
+                v-if="isOwner"
+                bottom
+              >
                 <template #activator="{ on, attrs }">
                   <app-btn
                     v-bind="attrs"
@@ -97,7 +100,7 @@
       >
         No existing beacon models found
       </div>
-      <v-row>
+      <v-row v-if="isOwner">
         <v-col cols="6">
           <app-btn
             block
@@ -137,6 +140,7 @@ import { Component, Mixins, Prop } from 'vue-property-decorator'
 import SaveModelDialog from './SaveModelDialog.vue'
 import StateMixin from '@/mixins/state'
 import ToolheadMixin from '@/mixins/toolhead'
+import AuthMixin from '@/mixins/auth'
 import type { BeaconModel } from '@/store/printer/types'
 import { encodeGcodeParamValue } from '@/util/gcode-helpers'
 
@@ -145,7 +149,7 @@ import { encodeGcodeParamValue } from '@/util/gcode-helpers'
     SaveModelDialog
   }
 })
-export default class BeaconCard extends Mixins(StateMixin, ToolheadMixin) {
+export default class BeaconCard extends Mixins(StateMixin, ToolheadMixin, AuthMixin) {
   saveDialogState = {
     open: false,
     existingName: 'default'
