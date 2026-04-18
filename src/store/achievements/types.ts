@@ -6,4 +6,9 @@ export interface AchievementsState {
   totalPoints: number
   enabled: boolean
   notificationsEnabled: boolean
+  /**
+   * True after `initAchievements` has run for this session (Moonraker `fluidd` row read or absent).
+   * Blocks `saveToDb` until then so a socket flush cannot overwrite server data with default/empty state.
+   */
+  hydratedFromMoonraker: boolean
 }

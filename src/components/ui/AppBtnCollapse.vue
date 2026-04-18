@@ -18,6 +18,7 @@
     <v-layout v-if="inLayout">
       <v-checkbox
         v-model="enabledModel"
+        :disabled="checkboxDisabled"
         hide-details
         class="mt-0 pt-0"
       />
@@ -39,5 +40,9 @@ export default class AppBtnCollapse extends Vue {
 
   @Prop({ type: Boolean })
   readonly inLayout?: boolean
+
+  /** When true, layout "show widget" checkbox cannot be toggled (e.g. plugin disabled in Plugin manager). */
+  @Prop({ type: Boolean, default: false })
+  readonly checkboxDisabled?: boolean
 }
 </script>

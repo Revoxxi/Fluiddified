@@ -93,6 +93,54 @@
               </v-list-item-title>
             </v-list-item-content>
           </v-list-item>
+
+          <v-divider />
+
+          <v-list-item>
+            <v-list-item-content>
+              <v-list-item-title class="mb-2">
+                {{ $t('app.setting.label.thermal_chart_scale') }}
+              </v-list-item-title>
+              <v-select
+                :value="thermalChartScale.mode"
+                :items="thermalChartScaleModeItems"
+                item-value="value"
+                item-text="text"
+                dense
+                filled
+                hide-details
+                @input="patchThermalChartScale({ mode: $event })"
+              />
+              <v-row
+                v-if="thermalChartScale.mode === 'fixed'"
+                class="mt-2"
+                dense
+              >
+                <v-col cols="6">
+                  <v-text-field
+                    type="number"
+                    :label="$t('app.setting.label.thermal_chart_min')"
+                    :value="thermalChartScale.min ?? ''"
+                    dense
+                    filled
+                    hide-details
+                    @change="onThermalChartMinChange"
+                  />
+                </v-col>
+                <v-col cols="6">
+                  <v-text-field
+                    type="number"
+                    :label="$t('app.setting.label.thermal_chart_max')"
+                    :value="thermalChartScale.max ?? ''"
+                    dense
+                    filled
+                    hide-details
+                    @change="onThermalChartMaxChange"
+                  />
+                </v-col>
+              </v-row>
+            </v-list-item-content>
+          </v-list-item>
         </v-list>
       </v-menu>
     </template>
@@ -109,6 +157,9 @@
       <thermal-chart
         ref="thermalchart"
         :narrow="narrow"
+        :scale-mode="thermalChartScale.mode"
+        :fixed-min="thermalChartScale.min"
+        :fixed-max="thermalChartScale.max"
       />
     </template>
   </collapsable-card>
@@ -123,7 +174,7 @@ import AuthMixin from '@/mixins/auth'
 import ThermalChart from '@/components/widgets/thermals/ThermalChart.vue'
 import TemperatureTargets from '@/components/widgets/thermals/TemperatureTargets.vue'
 import TemperaturePresetsMenu from './TemperaturePresetsMenu.vue'
-import type { TemperaturePreset } from '@/store/config/types'
+import type { TemperaturePreset, ThermalChartScaleConfig } from '@/store/config/types'
 import type { ChartSelectedLegends } from '@/store/charts/types'
 import { encodeGcodeParamValue } from '@/util/gcode-helpers'
 
@@ -214,6 +265,39 @@ export default class TemperatureCard extends Mixins(StateMixin, BrowserMixin, Au
       value,
       server: true
     })
+  }
+
+  get thermalChartScale (): ThermalChartScaleConfig {
+    return this.$typedState.config.uiSettings.general.thermalChartScale
+  }
+
+  get thermalChartScaleModeItems () {
+    return [
+      { text: this.$t('app.setting.label.thermal_chart_scale_auto').toString(), value: 'auto' as const },
+      { text: this.$t('app.setting.label.thermal_chart_scale_fixed').toString(), value: 'fixed' as const }
+    ]
+  }
+
+  patchThermalChartScale (partial: Partial<ThermalChartScaleConfig>) {
+    const next: ThermalChartScaleConfig = {
+      ...this.thermalChartScale,
+      ...partial
+    }
+    this.$typedDispatch('config/saveByPath', {
+      path: 'uiSettings.general.thermalChartScale',
+      value: next,
+      server: true
+    })
+  }
+
+  onThermalChartMinChange (v: string) {
+    const n = parseFloat(v)
+    this.patchThermalChartScale({ min: Number.isFinite(n) ? n : null })
+  }
+
+  onThermalChartMaxChange (v: string) {
+    const n = parseFloat(v)
+    this.patchThermalChartScale({ max: Number.isFinite(n) ? n : null })
   }
 
   handleApplyPreset (preset: TemperaturePreset) {

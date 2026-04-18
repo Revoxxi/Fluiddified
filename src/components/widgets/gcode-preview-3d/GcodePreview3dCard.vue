@@ -1,10 +1,12 @@
 <template>
   <collapsable-card
-    :title="$tc('app.general.title.gcode_preview')"
-    icon="$cubeScan"
+    class="gcode-preview-3d-card"
+    :class="{ 'gcode-preview-3d-card--fullscreen': fullscreen }"
+    :title="$t('app.general.title.gcode_preview_3d')"
+    icon="$printer3d"
     :draggable="!fullscreen"
     :collapsable="!fullscreen"
-    layout-path="dashboard.gcode-preview-card"
+    layout-path="dashboard.gcode-preview-3d-card"
   >
     <template #menu>
       <app-btn-collapse-group :collapsed="narrow">
@@ -12,9 +14,7 @@
           :disabled="!printerFile || printerFileLoaded"
           small
           class="my-1"
-          :class="{
-            'me-1': !fullscreen
-          }"
+          :class="{ 'me-1': !fullscreen }"
           @click="loadCurrent"
         >
           {{ $t('app.gcode.btn.load_current_file') }}
@@ -23,7 +23,7 @@
         <app-btn
           v-if="!fullscreen"
           icon
-          @click="$filters.routeTo({ name: 'gcode_preview', query: { view: '2d' } })"
+          @click="$filters.routeTo({ name: 'gcode_preview', query: { view: '3d' } })"
         >
           <v-icon dense>
             $fullScreen
@@ -33,7 +33,10 @@
     </template>
 
     <v-card-text
-      :class="{ 'no-pointer-events': overlay }"
+      :class="{
+        'no-pointer-events': overlay,
+        'gcode-preview-3d-card__text--fullscreen d-flex flex-column flex-grow-1 min-height-0': fullscreen
+      }"
       @dragover="handleDragOver"
       @dragenter.self.prevent
       @dragleave.self.prevent="handleDragLeave"
@@ -105,6 +108,67 @@
           </v-row>
           <v-row>
             <v-col>
+              <v-switch
+                v-if="!isGuest"
+                v-model="followProgress"
+                hide-details
+                dense
+                :label="$t('app.gcode.label.follow_progress')"
+              />
+            </v-col>
+          </v-row>
+          <v-row dense>
+            <v-col
+              cols="12"
+              sm="6"
+            >
+              <v-switch
+                v-model="preview3dShowPreviousLayers"
+                hide-details
+                dense
+                :disabled="!fileLoaded"
+                :label="$t('app.gcode.label.preview_3d_previous_layers')"
+              />
+            </v-col>
+            <v-col
+              cols="12"
+              sm="6"
+            >
+              <v-switch
+                v-model="preview3dShowNextLayers"
+                hide-details
+                dense
+                :disabled="!fileLoaded"
+                :label="$t('app.gcode.label.preview_3d_next_layers')"
+              />
+            </v-col>
+            <v-col
+              cols="12"
+              sm="6"
+            >
+              <v-switch
+                v-model="preview3dShowTravels"
+                hide-details
+                dense
+                :disabled="!fileLoaded"
+                :label="$t('app.gcode.label.preview_3d_travels')"
+              />
+            </v-col>
+            <v-col
+              cols="12"
+              sm="6"
+            >
+              <v-switch
+                v-model="preview3dShowPrinthead"
+                hide-details
+                dense
+                :disabled="!fileLoaded"
+                :label="$t('app.gcode.label.preview_3d_printhead')"
+              />
+            </v-col>
+          </v-row>
+          <v-row>
+            <v-col>
               <app-btn
                 :disabled="!fileLoaded"
                 block
@@ -117,17 +181,34 @@
         </v-col>
       </v-row>
 
-      <v-row>
-        <v-col>
-          <gcode-preview
-            ref="preview"
-            :layer="currentLayer"
-            :progress="moveProgress"
-            :disabled="!fileLoaded"
-            @cancelObject="cancelObject($event)"
-          />
+      <v-row
+        dense
+        class="mb-2 flex-shrink-0"
+      >
+        <v-col cols="12">
+          <span class="text-caption text--secondary">
+            {{ $t('app.gcode.msg.live_toolhead_hint') }}
+          </span>
         </v-col>
       </v-row>
+
+      <div
+        class="gcode-preview-3d-card__viewer"
+        :class="{ 'gcode-preview-3d-card__viewer--fullscreen': fullscreen }"
+      >
+        <gcode-preview-3d
+          ref="preview"
+          :disabled="!fileLoaded"
+          :fullscreen="fullscreen"
+          :layer="currentLayer"
+          :move-progress="moveProgress"
+          :use-live-toolhead="useLiveMcu"
+          :show-previous-layers="preview3dShowPreviousLayers"
+          :show-next-layers="preview3dShowNextLayers"
+          :show-travels="preview3dShowTravels"
+          :show-printhead="preview3dShowPrinthead"
+        />
+      </div>
 
       <app-drag-overlay
         v-model="overlay"
@@ -140,39 +221,50 @@
 </template>
 
 <script lang="ts">
-import { Component, Mixins, Prop, Ref, Watch } from 'vue-property-decorator'
+import { Component, Mixins, Prop, Watch } from 'vue-property-decorator'
 import StateMixin from '@/mixins/state'
 import FilesMixin from '@/mixins/files'
 import BrowserMixin from '@/mixins/browser'
 import AuthMixin from '@/mixins/auth'
-import axios from 'axios'
-import GcodePreview from './GcodePreview.vue'
-import GcodePreviewParserProgressDialog from './GcodePreviewParserProgressDialog.vue'
+import GcodePreview3d from './GcodePreview3d.vue'
+import GcodePreviewParserProgressDialog from '@/components/widgets/gcode-preview/GcodePreviewParserProgressDialog.vue'
 import type { AppFile, AppFileWithMeta } from '@/store/files/types'
 import type { Layer, MinMax, Move } from '@/store/gcodePreview/types'
 import { getFileDataTransferDataFromDataTransfer, hasFileDataTransferTypeInDataTransfer } from '@/util/file-data-transfer'
+import axios from 'axios'
 import { consola } from 'consola'
-import { encodeGcodeParamValue } from '@/util/gcode-helpers'
 
 @Component({
   components: {
     GcodePreviewParserProgressDialog,
-    GcodePreview
+    GcodePreview3d
   }
 })
-export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, BrowserMixin, AuthMixin) {
+export default class GcodePreview3dCard extends Mixins(StateMixin, FilesMixin, BrowserMixin, AuthMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
 
   @Prop({ type: Boolean })
   readonly fullscreen?: boolean
 
-  @Ref('preview')
-  readonly preview!: GcodePreview
+  overlay = false
 
   currentLayer = 0
   moveProgress = 0
-  overlay = false
+
+  preview3dShowPreviousLayers = true
+  preview3dShowNextLayers = false
+  preview3dShowTravels = false
+  preview3dShowPrinthead = true
+
+  /** Smooth nozzle from Klipper motion_report when following the active job. */
+  get useLiveMcu (): boolean {
+    return (
+      this.followProgress &&
+      this.printerFileLoaded &&
+      (this.printerState === 'printing' || this.printerState === 'paused')
+    )
+  }
 
   @Watch('layerCount')
   onLayerCountChanged () {
@@ -225,11 +317,6 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
     if (this.followProgress) {
       const fileMovePosition: number = this.$typedGetters['gcodePreview/getMoveIndexByFilePosition'](this.filePosition)
 
-      // In some (yet unclear) cases, fileMovePosition can get out of sync with
-      // the component's notion of moveProgress.  This seems to happen during
-      // layer changes, but not every time.  Possibly some gcode command is getting
-      // misinterpreted.
-      // This "fix" simply forces a re-sync of progress if they get out of sync
       if (fileMovePosition !== this.moveProgress) {
         this.syncMoveProgress()
       }
@@ -240,11 +327,7 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
   onPrinterFileChanged (value: AppFileWithMeta | undefined, oldValue: AppFileWithMeta | undefined) {
     if (this.autoLoadOnPrintStart &&
       value != null &&
-      (
-        oldValue == null ||
-        value.path !== oldValue.path ||
-        value.filename !== oldValue.filename
-      ) &&
+      (oldValue == null || value.path !== oldValue.path || value.filename !== oldValue.filename) &&
       ['paused', 'printing'].includes(this.printerState) &&
       !this.printerFileLoaded
     ) {
@@ -272,16 +355,16 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
     return this.$typedState.gcodePreview.moves
   }
 
-  get fileLoaded (): boolean {
-    return this.moves.length > 0
-  }
-
   get parserProgress (): number {
     return this.$typedState.gcodePreview.parserProgress
   }
 
   get showParserProgressDialog (): boolean {
     return this.file != null && this.parserProgress !== this.file.size
+  }
+
+  get fileLoaded (): boolean {
+    return this.moves.length > 0
   }
 
   get filePosition (): number {
@@ -343,6 +426,34 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
     this.moveProgress = this.$typedGetters['gcodePreview/getMoveIndexByFilePosition'](this.filePosition)
   }
 
+  get printerFile (): AppFileWithMeta | undefined {
+    return this.$typedGetters['printer/getPrinterFile']
+  }
+
+  get printerFileLoaded () {
+    const file = this.file
+    const printerFile = this.printerFile
+    if (
+      file == null ||
+      printerFile == null ||
+      file.path !== printerFile.path ||
+      file.filename !== printerFile.filename
+    ) {
+      if (this.followProgress) {
+        this.followProgress = false
+      }
+      return false
+    }
+    return true
+  }
+
+  get autoLoadOnPrintStart (): boolean {
+    if (this.isMobileViewport) {
+      return this.$typedState.config.uiSettings.gcodePreview.autoLoadMobileOnPrintStart
+    }
+    return this.$typedState.config.uiSettings.gcodePreview.autoLoadOnPrintStart
+  }
+
   abortParser () {
     this.$typedDispatch('gcodePreview/terminateParserWorker')
   }
@@ -353,7 +464,6 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
 
   async loadCurrent () {
     const printerFile = this.printerFile
-
     if (printerFile) {
       this.loadFile(printerFile)
     }
@@ -362,66 +472,13 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
   async loadFile (file: AppFile | AppFileWithMeta) {
     try {
       const response = await this.getGcode(file)
-
       const gcode = response?.data
-
       if (!gcode) return
-
-      this.$typedDispatch('gcodePreview/loadGcode', {
-        file,
-        gcode
-      })
+      this.$typedDispatch('gcodePreview/loadGcode', { file, gcode })
     } catch (error: unknown) {
       if (axios.isCancel(error)) return
       if (error instanceof Error && error.name === 'CanceledError') return
-      consola.error('[GcodePreview] load', error)
-    }
-  }
-
-  get printerFile (): AppFileWithMeta | undefined {
-    return this.$typedGetters['printer/getPrinterFile']
-  }
-
-  get printerFileLoaded () {
-    const file = this.file
-    const printerFile = this.printerFile
-
-    if (
-      file == null ||
-      printerFile == null ||
-      file.path !== printerFile.path ||
-      file.filename !== printerFile.filename
-    ) {
-      if (this.followProgress) {
-        this.followProgress = false
-      }
-
-      return false
-    }
-
-    return true
-  }
-
-  get autoLoadOnPrintStart (): boolean {
-    if (this.isMobileViewport) {
-      return this.$typedState.config.uiSettings.gcodePreview.autoLoadMobileOnPrintStart
-    }
-
-    return this.$typedState.config.uiSettings.gcodePreview.autoLoadOnPrintStart
-  }
-
-  async cancelObject (id: string) {
-    if (!this.hasMinRole('user')) return
-
-    const result = await this.$confirm(
-      this.$tc('app.general.simple_form.msg.confirm_exclude_object'),
-      { title: this.$tc('app.general.label.confirm'), color: 'card-heading', icon: '$error' }
-    )
-
-    if (result) {
-      const reqId = id.toUpperCase().replace(/\s/g, '_')
-
-      this.sendGcode(`EXCLUDE_OBJECT NAME=${encodeGcodeParamValue(reqId)}`)
+      consola.error('[GcodePreview3d]', error)
     }
   }
 
@@ -431,9 +488,7 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
       hasFileDataTransferTypeInDataTransfer(event.dataTransfer, 'jobs')
     ) {
       event.preventDefault()
-
       event.dataTransfer.dropEffect = 'link'
-
       this.overlay = true
     }
   }
@@ -444,16 +499,13 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
 
   handleDrop (event: DragEvent) {
     this.overlay = false
-
     if (
       event.dataTransfer &&
       hasFileDataTransferTypeInDataTransfer(event.dataTransfer, 'jobs')
     ) {
       const files = getFileDataTransferDataFromDataTransfer(event.dataTransfer, 'jobs')
       const path = files.path ? `gcodes/${files.path}` : 'gcodes'
-
       const file: AppFile | undefined = this.$typedGetters['files/getFile'](path, files.items[0])
-
       if (file) {
         this.loadFile(file)
       }
@@ -470,3 +522,33 @@ export default class GcodePreviewCard extends Mixins(StateMixin, FilesMixin, Bro
   }
 }
 </script>
+
+<style scoped>
+.gcode-preview-3d-card--fullscreen {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gcode-preview-3d-card--fullscreen :deep(.v-card) {
+  display: flex;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.gcode-preview-3d-card--fullscreen :deep(.v-card__text) {
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+}
+
+.gcode-preview-3d-card__viewer--fullscreen {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+</style>

@@ -53,6 +53,7 @@
               :collapsed.sync="isCollapsed"
               :enabled.sync="isEnabled"
               :in-layout="inLayout"
+              :checkbox-disabled="pluginGloballyDisabled"
             />
           </slot>
         </v-col>
@@ -287,6 +288,12 @@ export default class CollapsableCard extends Vue {
     }
   }
 
+  get pluginGloballyDisabled (): boolean {
+    const id = this._layoutPath?.id
+    if (!id) return false
+    return this.$typedGetters['plugins/isDisabled'](id)
+  }
+
   /**
    * The menu classes associated with the btns not inside a dropdown.
    */
@@ -330,10 +337,16 @@ export default class CollapsableCard extends Vue {
    * If the layout isn't defined, then this should always be enabled.
    */
   get isEnabled (): boolean {
+    if (this.pluginGloballyDisabled) {
+      return false
+    }
     return (this.layout) ? this.layout.enabled : true
   }
 
   set isEnabled (enabled: boolean) {
+    if (this.pluginGloballyDisabled) {
+      return
+    }
     const value = this.layout
     if (value && this._layoutPath) {
       value.enabled = enabled

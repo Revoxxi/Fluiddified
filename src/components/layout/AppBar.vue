@@ -240,6 +240,8 @@ import UserPasswordDialog from '@/components/settings/auth/UserPasswordDialog.vu
 import PendingChangesDialog from '@/components/settings/PendingChangesDialog.vue'
 import AppSaveConfigAndRestartBtn from './AppSaveConfigAndRestartBtn.vue'
 import AppUploadAndPrintBtn from './AppUploadAndPrintBtn.vue'
+import { cloneDeep } from 'lodash-es'
+import { getDefaultLayoutStateForInit, mergePluginCardsIntoDashboard } from '@/store/layout/mergePluginLayout'
 import { defaultState } from '@/store/layout/state'
 import StateMixin from '@/mixins/state'
 import ServicesMixin from '@/mixins/services'
@@ -417,7 +419,7 @@ export default class AppBar extends Mixins(StateMixin, ServicesMixin, FilesMixin
       : undefined
     const layoutDefaultState = pathLayout
       ? defaultState().layouts[pathLayout]
-      : this.$typedGetters['layout/getLayout']('dashboard')!
+      : mergePluginCardsIntoDashboard(cloneDeep(this.$typedGetters['layout/getLayout']('dashboard')!))
 
     const toReset = pathLayout ?? this.$typedGetters['layout/getSpecificLayoutName']
 
@@ -449,7 +451,7 @@ export default class AppBar extends Mixins(StateMixin, ServicesMixin, FilesMixin
   handleResetDefaultLayout () {
     this.$typedDispatch('layout/onLayoutChange', {
       name: 'dashboard',
-      value: defaultState().layouts.dashboard
+      value: getDefaultLayoutStateForInit().layouts.dashboard
     })
   }
 

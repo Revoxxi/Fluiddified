@@ -151,6 +151,40 @@ export interface GeneralConfig {
   printEtaCalculation: PrintEtaCalculation[];
   enableDiagnostics: boolean;
   colorPickerValueRange: ColorPickerValueRange;
+  /** Temperature chart Y-axis: auto (default) or fixed min/max (°C). */
+  thermalChartScale: ThermalChartScaleConfig;
+  /** Floating picture-in-picture camera (position/size + visibility). */
+  floatingCamera: FloatingCameraUiConfig;
+  /** Notes and tuning for multi-job / queue workflows (UI-only; optional macros). */
+  jobQueueFarm: JobQueueFarmConfig;
+}
+
+export interface ThermalChartScaleConfig {
+  mode: 'auto' | 'fixed';
+  min: number | null;
+  max: number | null;
+}
+
+export interface FloatingCameraUiConfig {
+  visible: boolean;
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+  webcamUid: string | null;
+}
+
+export type JobQueueFarmClearanceMode = 'none' | 'bed_strip' | 'toolhead_push' | 'custom_macro'
+
+export interface JobQueueFarmConfig {
+  /** When false, farm assist UI fields are hidden (printer handles via firmware/macros). */
+  showFarmAssistUi: boolean;
+  machinePreset: string;
+  clearanceMode: JobQueueFarmClearanceMode;
+  cooldownSeconds: number;
+  /** Optional macro name to run for part removal when mode is custom_macro */
+  customMacroName: string;
+  notes: string;
 }
 
 export type ToolheadControlStyle = 'cross' | 'bars' | 'circle'

@@ -92,5 +92,21 @@ export const actions = {
 
     // Save to moonraker.
     SocketActions.serverDatabasePostItem(Globals.MOONRAKER_DB.fluidd.ROOTS.macros.name + '.expanded', state.expanded)
+  },
+
+  /** Drop stored category locks so `[gcode_macro]` `group` names apply again. */
+  resetMacroCategoryOverrides ({ commit, state }) {
+    commit('clearMacroCategoryOverrides')
+    SocketActions.serverDatabasePostItem(Globals.MOONRAKER_DB.fluidd.ROOTS.macros.name + '.stored', state.stored)
+  },
+
+  assignMacrosToCategory ({ dispatch }, payload: { macros: Macro[]; categoryId: string }) {
+    for (const m of payload.macros) {
+      dispatch('saveMacro', {
+        ...m,
+        categoryId: payload.categoryId,
+        uiCategorySet: true
+      })
+    }
   }
 } satisfies ActionTree<MacrosState, RootState>

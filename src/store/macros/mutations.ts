@@ -5,7 +5,7 @@ import { defaultState } from './state'
 import type { Macro, MacroCategory, MacrosState } from './types'
 import { MACRO_DEFAULTS } from '@/store/macros/getters'
 
-const sanitizeMacroForStorage = (macro: Macro) => {
+export const sanitizeMacroForStorage = (macro: Macro) => {
   for (const key in macro) {
     if (!(key === 'name' || key in MACRO_DEFAULTS)) {
       delete macro[key as keyof Macro]
@@ -82,6 +82,7 @@ export const mutations = {
         if (macro.categoryId === payload.id) {
           const m = sanitizeMacroForStorage({ ...macro })
           delete m.categoryId
+          delete m.uiCategorySet
           Vue.set(state.stored, i, m)
         }
       })
@@ -94,5 +95,15 @@ export const mutations = {
 
   setExpanded (state, expanded: number[]) {
     Vue.set(state, 'expanded', expanded)
+  },
+
+  /** Clears UI/category assignments so printer.cfg `group` can apply again. */
+  clearMacroCategoryOverrides (state) {
+    state.stored.forEach((macro, i) => {
+      const m = { ...macro }
+      delete m.categoryId
+      delete m.uiCategorySet
+      Vue.set(state.stored, i, sanitizeMacroForStorage(m))
+    })
   }
 } satisfies MutationTree<MacrosState>

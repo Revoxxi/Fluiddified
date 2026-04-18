@@ -19,8 +19,12 @@ import { achievementDefinitions } from '@/components/widgets/achievements/defini
 import { resolveUserVisibleMacroName } from '@/store/achievements/gcodeMacros'
 import type { Role } from '@/types/auth'
 
-/** Guests may view achievements but never earn progress or unlock tiers. */
+/**
+ * Spectators and trusted pre-login clients may view achievements but must not earn progress,
+ * persist changes, or toggle settings. Requires a Fluidd JWT session (operator or owner).
+ */
 function canEarnAchievements (rootGetters: { (key: string): unknown }): boolean {
+  if (rootGetters['auth/uiSessionActive'] !== true) return false
   const hasMinRole = rootGetters['auth/hasMinRole'] as ((minRole: Role) => boolean) | undefined
   return hasMinRole?.('user') === true
 }
@@ -159,8 +163,13 @@ export const actions = {
   },
 
   async initAchievements ({ commit }, payload: Partial<AchievementsState> | undefined) {
-    if (payload) {
-      commit('initFromDb', migrateAchievementsDbPayload(payload))
+    try {
+      if (payload != null && Object.keys(payload).length > 0) {
+        commit('initFromDb', migrateAchievementsDbPayload(payload))
+      }
+    } finally {
+      // Always mark hydrated so we never persist pre-sync defaults over Moonraker; empty payload = no row yet.
+      commit('setHydratedFromMoonraker', true)
     }
   },
 
@@ -168,8 +177,14 @@ export const actions = {
    * Persist achievements to Moonraker DB. Skips when role is guest or session cannot
    * use server.database.post_item (user+). Avoids errors on first paint before JWT/roles hydrate.
    */
-  async saveToDb ({ state, rootGetters }) {
-    if (!rootGetters['auth/hasMinRole']('user')) {
+  async saveToDb (
+    { state, rootGetters },
+    opts?: { force?: boolean }
+  ) {
+    if (!opts?.force && !state.hydratedFromMoonraker) {
+      return
+    }
+    if (!canEarnAchievements(rootGetters)) {
       return
     }
     if (!Vue.$socket) {
@@ -188,12 +203,14 @@ export const actions = {
     }
   },
 
-  async setEnabled ({ commit, dispatch }, enabled: boolean) {
+  async setEnabled ({ commit, dispatch, rootGetters }, enabled: boolean) {
+    if (!canEarnAchievements(rootGetters)) return
     commit('setEnabled', enabled)
     await dispatch('saveToDb')
   },
 
-  async setNotificationsEnabled ({ commit, dispatch }, enabled: boolean) {
+  async setNotificationsEnabled ({ commit, dispatch, rootGetters }, enabled: boolean) {
+    if (!canEarnAchievements(rootGetters)) return
     commit('setNotificationsEnabled', enabled)
     await dispatch('saveToDb')
   },
@@ -1180,8 +1197,9 @@ export const actions = {
     )
   },
 
-  async resetAndSave ({ commit, dispatch }) {
+  async resetAndSave ({ commit, dispatch, rootGetters }) {
+    if (!canEarnAchievements(rootGetters)) return
     commit('setReset')
-    await dispatch('saveToDb')
+    await dispatch('saveToDb', { force: true })
   }
 } satisfies ActionTree<AchievementsState, RootState>

@@ -17,6 +17,7 @@
         <file-browser-settings />
         <file-editor-settings />
         <macro-settings />
+        <job-queue-farm-settings v-if="supportsJobQueue" />
         <camera-settings />
         <toolhead-settings />
         <preset-settings />
@@ -54,6 +55,7 @@ import MmuSettings from '@/components/settings/MmuSettings.vue'
 import WarningsSettings from '@/components/settings/WarningsSettings.vue'
 import PluginSettings from '@/components/settings/PluginSettings.vue'
 import AchievementSettings from '@/components/settings/AchievementSettings.vue'
+import JobQueueFarmSettings from '@/components/settings/JobQueueFarmSettings.vue'
 
 @Component({
   components: {
@@ -74,7 +76,8 @@ import AchievementSettings from '@/components/settings/AchievementSettings.vue'
     FileEditorSettings,
     WarningsSettings,
     PluginSettings,
-    AchievementSettings
+    AchievementSettings,
+    JobQueueFarmSettings
   }
 })
 export default class Settings extends Mixins(StateMixin) {
@@ -108,6 +111,10 @@ export default class Settings extends Mixins(StateMixin) {
 
   get supportsMmu (): boolean {
     return this.$typedState.printer.printer.mmu != null
+  }
+
+  get supportsJobQueue (): boolean {
+    return this.$typedGetters['server/componentSupport']('job_queue')
   }
 }
 </script>

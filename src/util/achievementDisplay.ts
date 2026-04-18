@@ -16,6 +16,7 @@ export function getAchievementNextTarget (def: AchievementDefinition, progress?:
 
 /**
  * Substitutes placeholder N / N% in tiered achievement descriptions with the next target.
+ * Uses word-boundary matching for `N` so words like `SAVE_CONFIG` are not corrupted.
  */
 export function formatAchievementDescription (def: AchievementDefinition, progress?: AchievementProgress): string {
   if (def.calibrationGuide) {
@@ -33,7 +34,7 @@ export function formatAchievementDescription (def: AchievementDefinition, progre
   }
   if (!def.tiers?.length) return def.description
   const t = getAchievementNextTarget(def, progress)
-  return def.description
-    .replace(/N%/g, `${t}%`)
-    .replace(/N/g, String(t))
+  const formatted = def.description.replace(/N%/g, `${t}%`)
+  // Standalone placeholder "N" only (not letters inside words like CONFIG, SAVE_, etc.)
+  return formatted.replace(/\bN\b/g, String(t))
 }

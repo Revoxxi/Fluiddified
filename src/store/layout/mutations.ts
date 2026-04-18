@@ -88,6 +88,7 @@ export const mutations = {
    * Updates a layout config item.
    */
   setUpdateConfig (state, payload: { name: string; container: string; i: number; value: LayoutConfig }) {
-    Vue.set(state.layouts[payload.name][payload.container], payload.i, payload.value)
+    const { value } = payload
+    Vue.set(state.layouts[payload.name][payload.container], payload.i, value)
   }
 } satisfies MutationTree<LayoutState>

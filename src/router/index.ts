@@ -173,8 +173,16 @@ const routes: Array<RouteConfig> = [
     ...defaultRouteConfig,
     meta: {
       ...defaultRouteConfig.meta,
-      minRole: 'guest' as Role
+      minRole: 'guest' as Role,
+      fillHeight: true
     }
+  },
+  {
+    path: '/preview-3d',
+    redirect: (to) => ({
+      path: '/preview',
+      query: { ...to.query, view: '3d' }
+    })
   },
   {
     path: '/login',

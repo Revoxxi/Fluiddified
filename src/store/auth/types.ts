@@ -15,6 +15,8 @@ export type FirstUserSetupState =
 
 export interface AuthState {
   authenticated: boolean;
+  /** Set when the UI session uses `X-Api-Key` (no JWT). */
+  apiKeySession: boolean;
   token: JwtPayload | null;
   refresh_token: JwtPayload | null;
   currentUser: AppUser | null;

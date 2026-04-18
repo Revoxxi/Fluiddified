@@ -107,6 +107,7 @@ export default class MacroMoveDialog extends Vue {
   }
 
   handleSave () {
+    this.macro.uiCategorySet = true
     this.$typedDispatch('macros/saveMacro', this.macro)
     this.open = false
   }

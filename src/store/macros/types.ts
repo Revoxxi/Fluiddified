@@ -11,6 +11,11 @@ export interface Macro {
   visible: boolean;
   categoryId?: string;
   category?: MacroCategory;
+  /**
+   * When true, `categoryId` is controlled only from the UI (not printer.cfg `group`).
+   * When false/undefined, a matching `[gcode_macro]` `group` in Klipper can assign the category.
+   */
+  uiCategorySet?: boolean;
   assignTo?: string;
   disabledWhilePrinting?: boolean;
   color?: string;

@@ -23,7 +23,22 @@
           </v-icon>
           {{ $t('app.setting.btn.add_category') }}
         </app-btn>
+
+        <app-btn
+          v-if="isOwner"
+          outlined
+          small
+          class="ms-2"
+          color="secondary"
+          @click="handleResetCategoriesFromConfig"
+        >
+          {{ $t('app.setting.btn.reset_macro_categories_from_config') }}
+        </app-btn>
       </app-setting>
+
+      <p class="caption text--secondary px-4 pb-2 mb-0">
+        {{ $t('app.setting.tooltip.macro_categories_ui_hint') }}
+      </p>
 
       <app-draggable
         v-model="categories"
@@ -116,6 +131,7 @@
 import { Component, Mixins } from 'vue-property-decorator'
 import MacroCategoryDialog from './MacroCategoryDialog.vue'
 import StateMixin from '@/mixins/state'
+import AuthMixin from '@/mixins/auth'
 import type { Macro, MacroCategory } from '@/store/macros/types'
 
 @Component({
@@ -123,7 +139,7 @@ import type { Macro, MacroCategory } from '@/store/macros/types'
     MacroCategoryDialog
   }
 })
-export default class MacroSettings extends Mixins(StateMixin) {
+export default class MacroSettings extends Mixins(StateMixin, AuthMixin) {
   categoryDialogState: any = {
     open: false,
     title: 'add',
@@ -210,6 +226,16 @@ export default class MacroSettings extends Mixins(StateMixin) {
         categoryId
       }
     })
+  }
+
+  async handleResetCategoriesFromConfig () {
+    const ok = await this.$confirm(
+      this.$t('app.setting.msg.confirm_reset_macro_categories_from_config').toString(),
+      { title: this.$tc('app.general.label.confirm'), color: 'card-heading', icon: '$info' }
+    )
+    if (ok) {
+      this.$typedDispatch('macros/resetMacroCategoryOverrides')
+    }
   }
 }
 </script>

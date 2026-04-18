@@ -10,6 +10,7 @@ export const NATIVE_BUNDLED_PLUGIN_IDS = new Set<string>([
   'beacon-card',
   'camera-card',
   'console-card',
+  'gcode-preview-3d-card',
   'gcode-preview-card',
   'job-queue-card',
   'jobs-card',
@@ -34,6 +35,7 @@ export const NATIVE_BUNDLED_PLUGIN_IDS = new Set<string>([
 export const NATIVE_OPTIONAL_DISABLE_IDS = new Set<string>([
   'afc-card',
   'beacon-card',
+  'gcode-preview-3d-card',
   'mmu-card',
   'spoolman-card',
   'runout-sensors-card'
@@ -49,6 +51,15 @@ export function canUserDisablePlugin (id: string): boolean {
     return true
   }
   return NATIVE_OPTIONAL_DISABLE_IDS.has(id)
+}
+
+/**
+ * Built-in dashboard card that cannot be disabled in the plugin manager — must stay eligible
+ * on the dashboard even if an older `fluidd` layout stored `enabled: false` or `plugins.disabled`
+ * contained the id before policy tightened.
+ */
+export function isCoreAlwaysOnDashboardPlugin (id: string): boolean {
+  return isNativeBundledPlugin(id) && !canUserDisablePlugin(id)
 }
 
 /** Native widgets (and achievements) are never removable; only external/user packs are. */
@@ -69,12 +80,13 @@ export function nativePluginKind (
 }
 
 /**
- * Plugin manager lists optional / non-standard natives and every non-native
- * widget. Core (always-on) built-ins are hidden so the panel stays focused.
+ * Plugin manager lists every registered plugin: non-native packs, optional
+ * natives (user may disable), and core natives (always on; toggle locked).
  */
 export function isShownInPluginManager (id: string): boolean {
-  if (!isNativeBundledPlugin(id)) {
-    return true
-  }
-  return NATIVE_OPTIONAL_DISABLE_IDS.has(id)
+  return (
+    !isNativeBundledPlugin(id) ||
+    NATIVE_OPTIONAL_DISABLE_IDS.has(id) ||
+    isCoreAlwaysOnDashboardPlugin(id)
+  )
 }

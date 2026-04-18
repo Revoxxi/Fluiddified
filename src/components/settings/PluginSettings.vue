@@ -81,6 +81,20 @@
             </div>
           </template>
           <div class="d-flex align-center flex-nowrap">
+            <v-tooltip bottom>
+              <template #activator="{ on, attrs }">
+                <v-icon
+                  small
+                  class="mr-2"
+                  :color="pluginStatusColor(plugin.id)"
+                  v-bind="attrs"
+                  v-on="on"
+                >
+                  {{ pluginStatusIcon(plugin.id) }}
+                </v-icon>
+              </template>
+              <span>{{ pluginStatusTooltip(plugin.id) }}</span>
+            </v-tooltip>
             <v-btn
               v-if="showRemoveFor(plugin.id)"
               icon
@@ -140,6 +154,7 @@ import { Icons } from '@/globals'
 import {
   canUserDisablePlugin,
   canUserRemovePlugin,
+  isCoreAlwaysOnDashboardPlugin,
   isNativeBundledPlugin,
   isShownInPluginManager,
   nativePluginKind
@@ -154,11 +169,60 @@ export default class PluginSettings extends Mixins(AuthMixin) {
 
   readonly deleteIcon = Icons.delete
 
+  pluginStatusIcon (id: string): string {
+    switch (this.pluginStatus(id)) {
+      case 'error':
+        return Icons.alertCircle
+      case 'stopped':
+        return Icons.stop
+      default:
+        return Icons.checkedCircle
+    }
+  }
+
+  pluginStatusColor (id: string): string | undefined {
+    switch (this.pluginStatus(id)) {
+      case 'error':
+        return 'error'
+      case 'stopped':
+        return 'grey'
+      default:
+        return 'success'
+    }
+  }
+
+  pluginStatusTooltip (id: string): string {
+    switch (this.pluginStatus(id)) {
+      case 'error':
+        return this.$t('app.setting.msg.plugin_status_error') as string
+      case 'stopped':
+        return this.$t('app.setting.msg.plugin_status_stopped') as string
+      default:
+        return this.$t('app.setting.msg.plugin_status_working') as string
+    }
+  }
+
+  pluginStatus (id: string): 'error' | 'stopped' | 'working' {
+    const err = this.$typedGetters['plugins/getLoadError'](id)
+    if (err) {
+      return 'error'
+    }
+    if (canUserDisablePlugin(id) && this.$typedGetters['plugins/isDisabled'](id)) {
+      return 'stopped'
+    }
+    return 'working'
+  }
+
   get plugins (): PluginManifest[] {
-    return pluginRegistry.getAll()
+    const list = pluginRegistry.getAll()
       .filter(p => isShownInPluginManager(p.id))
-      .slice()
+    const core = list
+      .filter(p => isCoreAlwaysOnDashboardPlugin(p.id))
       .sort((a, b) => a.name.localeCompare(b.name))
+    const rest = list
+      .filter(p => !isCoreAlwaysOnDashboardPlugin(p.id))
+      .sort((a, b) => a.name.localeCompare(b.name))
+    return [...core, ...rest]
   }
 
   get emptyPluginManagerMessage (): string {

@@ -22,7 +22,7 @@
             <template v-for="c in container">
               <component
                 :is="c.id"
-                v-if="inLayout || (c.enabled && !filtered(c))"
+                v-if="inLayout || (isDashboardCardVisible(c))"
                 :key="c.id"
                 :narrow="narrow"
                 class="mb-2 mb-md-4"
@@ -37,9 +37,14 @@
 
 <script lang="ts">
 import { Component, Mixins, Watch } from 'vue-property-decorator'
+import { cloneDeep } from 'lodash-es'
 import StateMixin from '@/mixins/state'
 import { eventTargetIsContentEditable } from '@/util/event-helpers'
 import { pluginRegistry } from '@/plugins/pluginRegistry'
+import {
+  DASHBOARD_CONTAINER_KEYS,
+  mergePluginCardsIntoDashboard
+} from '@/store/layout/mergePluginLayout'
 import type { LayoutConfig, LayoutContainer } from '@/store/layout/types'
 
 @Component({
@@ -101,21 +106,30 @@ export default class Dashboard extends Mixins(StateMixin) {
 
   @Watch('layout')
   onLayoutChange () {
+    const layout = this.layout
+    if (!layout) {
+      this.containers = [[], [], [], []]
+      return
+    }
+
+    const merged = mergePluginCardsIntoDashboard(cloneDeep(layout))
+    const beforeIds = new Set(
+      DASHBOARD_CONTAINER_KEYS.flatMap(k => layout[k] ?? []).map(c => c.id)
+    )
+    const hasNewIds = DASHBOARD_CONTAINER_KEYS.flatMap(k => merged[k] ?? []).some(
+      c => !beforeIds.has(c.id)
+    )
+    if (hasNewIds) {
+      const name: string = this.$typedGetters['layout/getSpecificLayoutName']
+      this.$typedDispatch('layout/onLayoutChange', { name, value: merged })
+      return
+    }
+
     const containers: Array<LayoutConfig[]> = []
-
     for (let index = 1; index <= 4; index++) {
-      const container = this.layout?.[`container${index}`]
-
-      if (container && container.length > 0) {
-        containers.push(container)
-      }
+      containers.push(merged[`container${index}`] ?? [])
     }
-
-    while (containers.length < 4) {
-      containers.push([])
-    }
-
-    this.containers = containers.slice(0, 4)
+    this.containers = containers
   }
 
   handleUpdateLayout () {
@@ -133,7 +147,12 @@ export default class Dashboard extends Mixins(StateMixin) {
   }
 
   hasCards (container: LayoutConfig[]) {
-    return container.some(card => card.enabled && !this.filtered(card))
+    return container.some(card => this.isDashboardCardVisible(card))
+  }
+
+  isDashboardCardVisible (card: LayoutConfig): boolean {
+    if (this.filtered(card)) return false
+    return card.enabled
   }
 
   filtered (item: LayoutConfig) {

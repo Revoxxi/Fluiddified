@@ -68,7 +68,28 @@ export const defaultState = (): ConfigState => {
         printProgressCalculation: ['file'],
         printEtaCalculation: ['file'],
         enableDiagnostics: false,
-        colorPickerValueRange: 'absolute'
+        colorPickerValueRange: 'absolute',
+        thermalChartScale: {
+          mode: 'auto',
+          min: 0,
+          max: 300
+        },
+        floatingCamera: {
+          visible: false,
+          x: 16,
+          y: 96,
+          width: 320,
+          height: 240,
+          webcamUid: null
+        },
+        jobQueueFarm: {
+          showFarmAssistUi: true,
+          machinePreset: 'custom',
+          clearanceMode: 'none',
+          cooldownSeconds: 60,
+          customMacroName: '',
+          notes: ''
+        }
       },
       theme: {
         isDark: true,

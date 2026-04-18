@@ -33,6 +33,32 @@
       dense
       class="mb-4"
     >
+      <app-setting :title="$t('app.setting.label.add_macros_to_category')">
+        <v-autocomplete
+          v-model="macrosToAssign"
+          :items="macrosNotInCategory"
+          :item-text="macroPickLabel"
+          item-value="name"
+          multiple
+          chips
+          deletable-chips
+          dense
+          filled
+          hide-details
+          :disabled="!isOwner"
+          :placeholder="$t('app.setting.label.add_macros_to_category_placeholder')"
+        />
+        <app-btn
+          class="mt-2"
+          color="primary"
+          small
+          :disabled="!isOwner || macrosToAssign.length === 0"
+          @click="handleAssignMacros"
+        >
+          {{ $t('app.setting.btn.assign_macros') }}
+        </app-btn>
+      </app-setting>
+
       <app-setting>
         <app-btn
           outlined
@@ -107,10 +133,11 @@
 </template>
 
 <script lang="ts">
-import { Component, Vue } from 'vue-property-decorator'
+import { Component, Mixins } from 'vue-property-decorator'
 import MacroSettingsDialog from './MacroSettingsDialog.vue'
 import type { Macro, MacroCategory } from '@/store/macros/types'
 import store from '@/store'
+import AuthMixin from '@/mixins/auth'
 import type { NavigationGuardNext, Route, Location } from 'vue-router'
 
 const routeGuard = (to: Route): Parameters<NavigationGuardNext>[0] => {
@@ -128,9 +155,10 @@ const routeGuard = (to: Route): Parameters<NavigationGuardNext>[0] => {
     MacroSettingsDialog
   }
 })
-export default class MacroCategorySettings extends Vue {
+export default class MacroCategorySettings extends Mixins(AuthMixin) {
   search = ''
   categoryId?: string = undefined
+  macrosToAssign: string[] = []
 
   dialogState: any = {
     open: false,
@@ -207,6 +235,24 @@ export default class MacroCategorySettings extends Vue {
       ...macro, visible: value
     }
     this.$typedDispatch('macros/saveMacro', newMacro)
+  }
+
+  macroPickLabel (m: Macro) {
+    return m.alias || m.name
+  }
+
+  get macrosNotInCategory (): Macro[] {
+    const id = this.categoryId ?? '0'
+    const all: Macro[] = this.$typedGetters['macros/getMacros']
+    return all.filter(m => !m.name.startsWith('_') && m.categoryId !== id)
+  }
+
+  handleAssignMacros () {
+    const id = this.categoryId ?? '0'
+    const all: Macro[] = this.$typedGetters['macros/getMacros']
+    const picked = all.filter(m => this.macrosToAssign.includes(m.name))
+    this.$typedDispatch('macros/assignMacrosToCategory', { macros: picked, categoryId: id })
+    this.macrosToAssign = []
   }
 }
 </script>

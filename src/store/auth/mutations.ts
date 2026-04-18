@@ -39,7 +39,12 @@ export const mutations = {
   },
 
   setAddUser (state, user) {
-    state.users.push({ source: 'moonraker', ...user })
+    const i = state.users.findIndex(u => u.username === user.username)
+    if (i >= 0) {
+      Vue.set(state.users, i, { source: 'moonraker', ...user })
+    } else {
+      state.users.push({ source: 'moonraker', ...user })
+    }
   },
 
   setRemoveUser (state, user) {

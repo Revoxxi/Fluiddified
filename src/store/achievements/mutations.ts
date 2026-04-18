@@ -33,6 +33,10 @@ export const mutations = {
     state.notificationsEnabled = enabled
   },
 
+  setHydratedFromMoonraker (state, value: boolean) {
+    state.hydratedFromMoonraker = value
+  },
+
   initFromDb (state, payload: Partial<AchievementsState>) {
     if (payload.progress != null) state.progress = payload.progress
     if (payload.stats != null) {

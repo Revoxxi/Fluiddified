@@ -8,7 +8,14 @@ export const MACRO_DEFAULTS = {
   disabledWhilePrinting: false,
   color: '',
   categoryId: '0',
-  order: undefined
+  order: undefined,
+  uiCategorySet: undefined as boolean | undefined
+}
+
+function configMacroGroup (config: unknown): string | undefined {
+  if (!config || typeof config !== 'object') return undefined
+  const g = (config as Record<string, unknown>).group
+  return typeof g === 'string' && g.length > 0 ? g : undefined
 }
 
 export const getters = {
@@ -40,13 +47,25 @@ export const getters = {
           config
         }
 
-        // Handle categories, incl those that no longer exist.
-        if (stored?.categoryId) {
-          const category = state.categories.find(category => category.id === stored.categoryId)
+        const cfgGroup = configMacroGroup(config)
 
-          if (category) {
-            macro.category = category
-          } else {
+        let resolvedCategoryId = '0'
+        if (stored?.uiCategorySet === true) {
+          resolvedCategoryId = stored.categoryId ?? '0'
+        } else if (stored != null && Object.prototype.hasOwnProperty.call(stored, 'categoryId') && stored.categoryId != null) {
+          resolvedCategoryId = stored.categoryId
+        } else if (cfgGroup) {
+          const match = state.categories.find(c => c.name === cfgGroup)
+          resolvedCategoryId = match?.id ?? '0'
+        }
+
+        macro.categoryId = resolvedCategoryId
+        const category = state.categories.find(c => c.id === resolvedCategoryId)
+        if (category && resolvedCategoryId !== '0') {
+          macro.category = category
+        } else {
+          macro.category = undefined
+          if (resolvedCategoryId !== '0' && !category) {
             macro.categoryId = '0'
           }
         }

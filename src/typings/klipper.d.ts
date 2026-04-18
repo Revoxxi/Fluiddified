@@ -1296,6 +1296,8 @@ declare namespace Klipper {
     gcode: string;
     rename_existing?: string;
     description: string;
+    /** Klipper / user cfg: optional UI group name; Fluidd maps this to a category with the same name when UI has not locked the macro. */
+    group?: string;
     [key: `variable_${string}`]: string | undefined;
   }
 

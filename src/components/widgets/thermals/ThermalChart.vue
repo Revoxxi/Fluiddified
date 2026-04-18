@@ -31,6 +31,16 @@ export default class ThermalChart extends Mixins(BrowserMixin) {
   @Prop({ type: Boolean })
   readonly narrow?: boolean
 
+  /** When `fixed`, use `fixedMin` / `fixedMax` (°C) for the left Y axis instead of auto extents. */
+  @Prop({ type: String, default: 'auto' })
+  readonly scaleMode!: 'auto' | 'fixed'
+
+  @Prop({ type: Number, default: null })
+  readonly fixedMin!: number | null
+
+  @Prop({ type: Number, default: null })
+  readonly fixedMax!: number | null
+
   @Ref('chart')
   readonly chart!: ECharts
 
@@ -265,20 +275,24 @@ export default class ThermalChart extends Mixins(BrowserMixin) {
           splitLine: { show: true, lineStyle },
           minInterval: 20,
           maxInterval: 60,
-          min: (extent) => {
-            const min = Math.floor(extent.min / 10) * 10
+          min: this.scaleMode === 'fixed' && this.fixedMin != null
+            ? this.fixedMin
+            : (extent) => {
+              const min = Math.floor(extent.min / 10) * 10
 
-            return min === extent.min && (min - 10) >= 0
-              ? min - 10
-              : min
-          },
-          max: (extent) => {
-            const max = Math.ceil(extent.max / 10) * 10
+              return min === extent.min && (min - 10) >= 0
+                ? min - 10
+                : min
+            },
+          max: this.scaleMode === 'fixed' && this.fixedMax != null
+            ? this.fixedMax
+            : (extent) => {
+              const max = Math.ceil(extent.max / 10) * 10
 
-            return max === extent.max
-              ? max + 10
-              : max
-          },
+              return max === extent.max
+                ? max + 10
+                : max
+            },
           axisLabel: {
             margin: 8,
             color: fontColor,

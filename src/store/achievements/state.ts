@@ -35,7 +35,8 @@ export const defaultState = (): AchievementsState => {
     },
     totalPoints: 0,
     enabled: true,
-    notificationsEnabled: true
+    notificationsEnabled: true,
+    hydratedFromMoonraker: false
   }
 }
 

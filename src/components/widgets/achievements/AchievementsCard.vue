@@ -56,17 +56,17 @@
     </div>
 
     <achievement-detail-dialog
-      v-if="detailDialog.open"
+      v-if="detailDialog.open && detailDialog.definition"
       v-model="detailDialog.open"
       :definition="detailDialog.definition"
-      :progress="detailDialog.progress"
+      :progress="getProgress(detailDialog.definition.id)"
     />
   </collapsable-card>
 </template>
 
 <script lang="ts">
 import { Component, Vue } from 'vue-property-decorator'
-import type { AchievementCategory, AchievementDefinition, AchievementProgress } from '@/types/achievement'
+import type { AchievementCategory, AchievementDefinition } from '@/types/achievement'
 import { orderAchievementsForList } from '@/util/achievementSort'
 import { achievementDefinitions } from './definitions'
 import AchievementItem from './AchievementItem.vue'
@@ -96,11 +96,9 @@ export default class AchievementsCard extends Vue {
   detailDialog: {
     open: boolean
     definition: AchievementDefinition | null
-    progress: AchievementProgress | undefined
   } = {
       open: false,
-      definition: null,
-      progress: undefined
+      definition: null
     }
 
   get categories () {
@@ -138,8 +136,7 @@ export default class AchievementsCard extends Vue {
   openDetail (achievement: AchievementDefinition) {
     this.detailDialog = {
       open: true,
-      definition: achievement,
-      progress: this.getProgress(achievement.id)
+      definition: achievement
     }
   }
 

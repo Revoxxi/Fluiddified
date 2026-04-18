@@ -11,6 +11,7 @@
       <app-setting :title="$t('app.setting.label.enable')">
         <v-switch
           :input-value="enabled"
+          :disabled="!canManageAchievements"
           hide-details
           class="mt-0"
           @change="setEnabled"
@@ -22,7 +23,7 @@
       <app-setting title="Notifications">
         <v-switch
           :input-value="notificationsEnabled"
-          :disabled="!enabled"
+          :disabled="!enabled || !canManageAchievements"
           hide-details
           class="mt-0"
           @change="setNotificationsEnabled"
@@ -50,7 +51,7 @@
           outlined
           small
           color="primary"
-          :disabled="!enabled || scanning"
+          :disabled="!enabled || scanning || !canManageAchievements"
           :loading="scanning"
           @click="runRetroactiveScan"
         >
@@ -65,7 +66,7 @@
           outlined
           small
           color="error"
-          :disabled="!enabled"
+          :disabled="!enabled || !canManageAchievements"
           @click="handleReset"
         >
           Reset All
@@ -82,6 +83,11 @@ import { achievementDefinitions } from '@/components/widgets/achievements/defini
 @Component({})
 export default class AchievementSettings extends Vue {
   scanning = false
+
+  /** Operators and owners only — guests may view stats but must not change or persist. */
+  get canManageAchievements (): boolean {
+    return this.$typedGetters['auth/hasMinRole']('user')
+  }
 
   get enabled (): boolean {
     return this.$typedState.achievements.enabled

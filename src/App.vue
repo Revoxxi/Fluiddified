@@ -17,6 +17,8 @@
       @navdrawer="handleNavDrawerChange"
     />
 
+    <floating-camera-panel v-if="socketConnected && uiSessionActive" />
+
     <achievement-notification
       v-if="flashMessageState.open && flashMessageState.achievement"
       v-model="flashMessageState.open"
@@ -141,6 +143,7 @@ import ActionCommandPromptDialog from '@/components/common/ActionCommandPromptDi
 import KeyboardShortcutsDialog from '@/components/common/KeyboardShortcutsDialog.vue'
 import { eventTargetIsContentEditable, keyboardEventToKeyboardShortcut } from '@/util/event-helpers'
 import MmuEditTtgMapDialog from './components/widgets/mmu/MmuEditTtgMapDialog.vue'
+import FloatingCameraPanel from '@/components/common/FloatingCameraPanel.vue'
 
 @Component<App>({
   metaInfo () {
@@ -156,7 +159,8 @@ import MmuEditTtgMapDialog from './components/widgets/mmu/MmuEditTtgMapDialog.vu
     FileSystemUploadDialog,
     ActionCommandPromptDialog,
     KeyboardShortcutsDialog,
-    MmuEditTtgMapDialog
+    MmuEditTtgMapDialog,
+    FloatingCameraPanel
   }
 })
 export default class App extends Mixins(StateMixin, FilesMixin, BrowserMixin, AuthMixin) {

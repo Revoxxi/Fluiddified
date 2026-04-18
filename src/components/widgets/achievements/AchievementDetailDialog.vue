@@ -20,13 +20,11 @@
           label
           color="grey"
           text-color="white"
+          class="mr-2"
         >
           ?
         </v-chip>
-        <achievement-rarity-badge
-          v-else
-          :rarity="definition.rarity"
-        />
+        <achievement-rarity-badge :rarity="definition.rarity" />
       </v-card-title>
 
       <v-card-text :class="{ 'achievement-detail-dialog__text--guide': showCalibrationGuide }">
@@ -374,6 +372,17 @@ export default class AchievementDetailDialog extends Vue {
       ...(this.progress?.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG)
     }
     this.configPanelExpanded = this.progress?.calibrationGuideConfigSaved !== true
+  }
+
+  @Watch('progress')
+  onProgressUpdated (p?: AchievementProgress): void {
+    if (!this.value || this.definition.calibrationGuide == null) return
+    if (p?.calibrationGuideConfigSaved === true) {
+      this.configPanelExpanded = false
+      this.draftConfig = {
+        ...(p.calibrationGuideConfig ?? DEFAULT_CALIBRATION_GUIDE_CONFIG)
+      }
+    }
   }
 
   get isUnlocked (): boolean {

@@ -28,6 +28,19 @@ export const actions = {
     await dispatch('loadApiKeyIfOwner')
   },
 
+  /**
+   * Replace `state.users` with Moonraker `access.users.list` (source of truth).
+   * Use after creating/deleting accounts from the UI so Vuex never keeps removed users or duplicates rows.
+   */
+  async refreshUsersList ({ commit }) {
+    try {
+      const list = await SocketActions.accessUsersList()
+      commit('setUsers', list.users)
+    } catch (e) {
+      consola.warn('[auth] refreshUsersList failed', e)
+    }
+  },
+
   async loadApiKeyIfOwner ({ commit, rootGetters }) {
     if (!rootGetters['auth/hasMinRole']('owner')) return
     try {
@@ -364,12 +377,14 @@ export const actions = {
     }
   },
 
-  async addUser ({ rootGetters }, user) {
+  async addUser ({ dispatch, rootGetters }, user: { username: string, password: string }) {
     if (!rootGetters['auth/canManageMoonrakerAccounts']) {
       consola.warn('addUser denied')
       throw new Error('Permission denied')
     }
     await SocketActions.accessPostUser(user.username, user.password)
+    await dispatch('refreshUsersList')
+    await dispatch('setUserRole', { username: user.username, role: 'guest' })
 
     return user
   },
@@ -381,17 +396,30 @@ export const actions = {
     }
     await SocketActions.accessDeleteUser(user.username)
     await dispatch('deleteUserRole', user.username)
+    await dispatch('refreshUsersList')
     await dispatch('normalizeSoleAccountRoles')
 
     return user
   },
 
-  async onUserCreated ({ commit }, user) {
-    commit('setAddUser', user)
+  async onUserCreated ({ commit, state, dispatch }, user: { username: string }) {
+    await dispatch('refreshUsersList')
+    if (
+      !Object.prototype.hasOwnProperty.call(state.roles, user.username) &&
+      state.users.length > 1
+    ) {
+      commit('setUserRole', { username: user.username, role: 'guest' })
+      try {
+        await SocketActions.serverDatabasePostItem('auth', { roles: state.roles })
+      } catch (e) {
+        consola.warn('[auth] onUserCreated Fluidd role persist failed', e)
+      }
+    }
+    await dispatch('normalizeSoleAccountRoles')
   },
 
-  async onUserDeleted ({ commit, dispatch }, user) {
-    commit('setRemoveUser', user)
+  async onUserDeleted ({ dispatch }, user: { username: string }) {
+    await dispatch('refreshUsersList')
     await dispatch('deleteUserRole', { username: user.username, fromServer: true })
     await dispatch('normalizeSoleAccountRoles')
   },

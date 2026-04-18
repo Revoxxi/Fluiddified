@@ -1,7 +1,7 @@
 import { cloneDeep } from 'lodash-es'
 import { defaultState as getDefaultState } from './state'
 import { pluginRegistry } from '@/plugins/pluginRegistry'
-import type { LayoutContainer, LayoutState } from './types'
+import type { LayoutConfig, LayoutContainer, LayoutState } from './types'
 
 /**
  * Appends cards from the plugin registry that are not already in the static

@@ -1,5 +1,6 @@
 <template>
   <collapsable-card
+    v-if="!cameraPopoutOpen"
     :title="$tc('app.general.title.camera', 2)"
     icon="$camera"
     :lazy="false"
@@ -8,6 +9,26 @@
     @collapsed="collapsed = $event"
   >
     <template #menu>
+      <v-tooltip
+        v-if="canPopoutCamera"
+        bottom
+      >
+        <template #activator="{ on, attrs }">
+          <app-btn
+            icon
+            small
+            class="me-1"
+            v-bind="attrs"
+            v-on="on"
+            @click="openCameraPopout"
+          >
+            <v-icon dense>
+              $openInNew
+            </v-icon>
+          </app-btn>
+        </template>
+        <span>{{ $t('app.general.tooltip.camera_popout') }}</span>
+      </v-tooltip>
       <camera-menu
         @select="handleCameraSelect"
       />
@@ -44,6 +65,7 @@ import { Component, Mixins } from 'vue-property-decorator'
 import CameraItem from '@/components/widgets/camera/CameraItem.vue'
 import CameraMenu from './CameraMenu.vue'
 import StateMixin from '@/mixins/state'
+import type { FloatingCameraUiConfig } from '@/store/config/types'
 
 @Component({
   components: {
@@ -53,6 +75,38 @@ import StateMixin from '@/mixins/state'
 })
 export default class CameraCard extends Mixins(StateMixin) {
   collapsed = false
+
+  /** While true, the floating panel is open — hide this card until it is closed (any route). */
+  get cameraPopoutOpen (): boolean {
+    return this.$typedState.config.uiSettings.general.floatingCamera.visible
+  }
+
+  get canPopoutCamera (): boolean {
+    return (this.$typedGetters['webcams/getEnabledWebcams'] as Moonraker.Webcam.Entry[]).length > 0
+  }
+
+  openCameraPopout () {
+    const f: FloatingCameraUiConfig = this.$typedState.config.uiSettings.general.floatingCamera
+    const active = this.$typedState.webcams.activeWebcam
+    const enabled: Moonraker.Webcam.Entry[] = this.$typedGetters['webcams/getEnabledWebcams']
+    let webcamUid: string | null = f.webcamUid
+    if (active !== 'all' && enabled.some(w => w.uid === active)) {
+      webcamUid = active
+    } else if (this.cameras.length > 0) {
+      webcamUid = this.cameras[0].uid
+    } else if (enabled.length > 0) {
+      webcamUid = enabled[0].uid
+    }
+    this.$typedDispatch('config/saveByPath', {
+      path: 'uiSettings.general.floatingCamera',
+      value: {
+        ...f,
+        visible: true,
+        webcamUid: webcamUid ?? f.webcamUid
+      },
+      server: true
+    })
+  }
 
   get cols () {
     if (this.cameras.length === 1) return 12

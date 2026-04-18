@@ -230,8 +230,11 @@ const getMoorakerDatabase = async (apiConfig: ApiConfig, namespace: string) => {
 }
 
 export const appInit = async (apiConfig?: ApiConfig, hostConfig?: HostConfig): Promise<InitConfig> => {
-  // Reset the store to its default state.
-  await store.dispatch('reset', undefined, { root: true })
+  // Reset the store to its default state. Keep achievements until Moonraker DB hydration —
+  // a full reset clears progress first; if `initAchievements` gets `{}` or the GET fails, users
+  // otherwise relogin to an empty slate even when the DB still holds their data.
+  const moduleKeys = Object.keys(store.state).filter((k) => k !== 'achievements')
+  await store.dispatch('reset', moduleKeys, { root: true })
 
   try {
     // Load the Host Config
@@ -331,6 +334,8 @@ export const appInit = async (apiConfig?: ApiConfig, hostConfig?: HostConfig): P
         if (root.migrate_only) {
           if (value) await store.dispatch(root.dispatch, value)
         } else {
+          // Create the Moonraker namespace key once when missing (`GET` returned no entry).
+          // Does not run when data already exists — avoids re-posting over a populated document.
           if (!value) {
             try {
               await httpClientActions.serverDatabaseItemPost(NAMESPACE, root.name, {})

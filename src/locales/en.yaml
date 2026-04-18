@@ -224,6 +224,8 @@ app:
       current_layer_height: Current Layer Height
       exclude_object: Exclude Object
       follow_progress: Follow progress
+      view_2d: 2D
+      view_3d: 3D
       layer: Layer
       layers: Layers
       parsed: Parsed
@@ -233,9 +235,18 @@ app:
       show_next_layer: Show next layer
       show_parts: Show parts
       show_previous_layer: Show previous layer
+      preview_3d_previous_layers: Previous layers
+      preview_3d_next_layers: Next layers
+      preview_3d_travels: Travels
+      preview_3d_printhead: Print head
+      preview_3d_zoom_in: Zoom in
+      preview_3d_zoom_out: Zoom out
+      preview_3d_reset_view: Reset view
       show_retractions: Show retractions
       parsing_file: Parsing file
     msg:
+      live_toolhead_hint: >-
+        When follow progress is on, the 3D view can use the live toolhead position from the printer when idle.
       confirm: >-
         The file "%{filename}" is %{size}, this might be resource intensive for
         your system. Are you sure?
@@ -599,6 +610,7 @@ app:
       endstops: Endstops
       fans_outputs: Fans & Outputs
       gcode_preview: Gcode Preview
+      gcode_preview_3d: G-code Preview (3D)
       history: History
       home: Home
       jobs: Jobs
@@ -639,6 +651,7 @@ app:
       rollover_logs: Rollover logs
       camera_fullscreen_zoom: Scroll to zoom, drag to pan the image.
       camera_fullscreen_reset: Reset zoom and position
+      camera_popout: Pop out camera to a floating window. The dashboard camera card is hidden until you close it.
       set_default_layout: Set current layout as server-wide default layout
       file_browser_help: >-
         Drag and drop files or folders from outside the browser to upload them here<br>Move files and folders by dragging and dropping them onto sub-folders or ".."
@@ -683,6 +696,8 @@ app:
       stepper_driver_overheating: '%{klipperDomain}/TMC_Drivers.html#tmc-reports-error-ot1overtemperror'
   setting:
     btn:
+      assign_macros: Assign to category
+      reset_macro_categories_from_config: Use printer.cfg groups
       add_camera: Add Camera
       add_category: Add Category
       add_filter: Add Filter
@@ -714,6 +729,9 @@ app:
       plugin_manager_core_only: >-
         Standard dashboard cards stay enabled and are not listed here. This section is for
         optional hardware-related cards, catalog widgets, and packs you install from ZIP.
+      confirm_reset_macro_categories_from_config: >-
+        Clear all category assignments saved in Fluidd? Macros will use [gcode_macro] group names
+        from printer.cfg when they match a category name, until you assign categories again in the UI.
     camera_type_options:
       mjpegadaptive: MJPEG Adaptive
       mjpegstream: MJPEG Stream
@@ -822,6 +840,27 @@ app:
       show_animations: Show animations
       show_barometric_pressure: Show barometric pressure
       show_chart: Show chart
+      thermal_chart_scale: Temperature chart Y axis
+      thermal_chart_scale_auto: Auto scale
+      thermal_chart_scale_fixed: Fixed scale (°C)
+      thermal_chart_min: Min °C
+      thermal_chart_max: Max °C
+      add_macros_to_category: Add macros to this category
+      add_macros_to_category_placeholder: Search macros…
+      job_queue_farm_show_ui: Show queue / farm assist options
+      job_queue_machine_preset: Machine preset
+      job_queue_clearance_mode: Part clearance style
+      job_queue_custom_macro: Custom macro name
+      job_queue_custom_macro_placeholder: e.g. CLEAR_PART
+      job_queue_cooldown: Cooldown between jobs
+      job_queue_notes: Notes / reminders
+      machine_preset_custom: Custom
+      machine_preset_ender3_v3_se: Ender 3 V3 SE (toolhead push style)
+      machine_preset_voron: Voron-style (bed strip)
+      clearance_none: None / handled elsewhere
+      clearance_bed_strip: Bed moves to strip parts
+      clearance_toolhead_push: Toolhead pushes part off
+      clearance_custom_macro: Run custom macro
       show_code_lens: Show CodeLens
       show_gas_resistance: Show gas resistance
       show_legend: Show legend
@@ -876,9 +915,17 @@ app:
       plugins: Plugins
       plugin_manager: Plugin manager
       thermal_presets: Thermal Presets
+      job_queue_farm: Job queue & farm
       tool: Tool
       warnings: Warnings
     tooltip:
+      macro_categories_ui_hint: >-
+        Add categories here, then open a category to assign macros or use each macro’s settings dialog.
+        Assigning in the UI always overrides printer.cfg `group` for that macro. Use “Use printer.cfg groups”
+        to clear UI locks.
+      job_queue_farm_disclaimer: >-
+        These values are stored in the UI for your notes and future automation. Disabling “Show queue / farm
+        assist options” hides this section if your workflow uses Klipper macros or hardware alone.
       average_calculation: If more than one option is select, an average will be calculated
       diagnostics_performance: '[BETA] Logging diagnostics info may impact performance'
       gcode_coords: Use GCode position instead of toolhead position on dashboard
