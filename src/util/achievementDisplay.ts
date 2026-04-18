@@ -18,6 +18,27 @@ export function getAchievementNextTarget (def: AchievementDefinition, progress?:
  * Substitutes placeholder N / N% in tiered achievement descriptions with the next target.
  * Uses word-boundary matching for `N` so words like `SAVE_CONFIG` are not corrupted.
  */
+/**
+ * Text for unlock toasts / announcements: substitutes the milestone just reached (tier threshold)
+ * so "N" / "N%" are never shown literally. Prefer `unlockMessage` when defined.
+ */
+export function formatAchievementAnnouncement (
+  def: AchievementDefinition,
+  progress?: AchievementProgress
+): string {
+  if (def.unlockMessage) return def.unlockMessage
+  if (def.calibrationGuide) {
+    return formatAchievementDescription(def, progress)
+  }
+  if (def.tiers?.length && progress && progress.tierReached > 0) {
+    const thr = def.tiers[progress.tierReached - 1]
+    return def.description
+      .replace(/N%/g, `${thr}%`)
+      .replace(/\bN\b/g, String(thr))
+  }
+  return def.description
+}
+
 export function formatAchievementDescription (def: AchievementDefinition, progress?: AchievementProgress): string {
   if (def.calibrationGuide) {
     if (progress?.unlockedAt != null) return def.description

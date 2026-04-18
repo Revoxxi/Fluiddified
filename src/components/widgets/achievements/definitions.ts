@@ -50,6 +50,17 @@ export const achievementDefinitions: AchievementDefinition[] = [
     tiers: [10, 100, 500, 1000, 5000, 10000, 50000],
     unit: 'grams'
   },
+  {
+    id: 'queue_completed',
+    name: 'Queue Production',
+    description: 'Complete N prints that ran from the Moonraker job queue',
+    icon: '$trophy',
+    category: 'volume',
+    rarity: 'uncommon',
+    points: 25,
+    tiers: [1, 5, 25, 100, 250, 500],
+    unit: 'jobs'
+  },
 
   // ── Category 2: Consistency (various tiers) ──
 
@@ -349,6 +360,28 @@ export const achievementDefinitions: AchievementDefinition[] = [
     category: 'timing',
     rarity: 'rare',
     points: 50
+  },
+  {
+    id: 'months_active',
+    name: 'Calendar Builder',
+    description: 'Print in N different calendar months (lifetime)',
+    icon: '$clock',
+    category: 'timing',
+    rarity: 'uncommon',
+    points: 25,
+    tiers: [3, 6, 12, 24, 48, 72, 120],
+    unit: 'months'
+  },
+  {
+    id: 'seasons_touched',
+    name: 'Four Seasons',
+    description: 'Print in N distinct seasons (spring, summer, fall, winter — local calendar)',
+    icon: '$clock',
+    category: 'timing',
+    rarity: 'rare',
+    points: 50,
+    tiers: [1, 2, 3, 4],
+    unit: 'seasons'
   },
 
   // ── Category 5: Klipper Mastery ──
@@ -657,6 +690,48 @@ export const achievementDefinitions: AchievementDefinition[] = [
     category: 'exploration',
     rarity: 'common',
     points: 10
+  },
+  {
+    id: 'timelapse_debut',
+    name: 'Directors Cut',
+    description: 'Finish rendering your first timelapse video',
+    icon: '$eye',
+    category: 'exploration',
+    rarity: 'uncommon',
+    points: 25,
+    unlockMessage: 'Action!'
+  },
+  {
+    id: 'timelapse_producer',
+    name: 'Timelapse Studio',
+    description: 'Finish rendering N timelapse videos',
+    icon: '$eye',
+    category: 'exploration',
+    rarity: 'rare',
+    points: 50,
+    tiers: [1, 5, 15, 50, 100],
+    unit: 'renders'
+  },
+  {
+    id: 'update_inventory',
+    name: 'Update Scout',
+    description: 'Check for software updates from the versions panel',
+    icon: '$cog',
+    category: 'exploration',
+    rarity: 'common',
+    points: 10,
+    unlockMessage: 'Nothing wrong with staying current.'
+  },
+  {
+    id: 'stack_upgrade',
+    name: 'Stack Upgrade',
+    description: 'Complete N Moonraker update-manager upgrades (Klipper, Moonraker, system, clients)',
+    icon: '$cog',
+    category: 'exploration',
+    rarity: 'uncommon',
+    points: 25,
+    tiers: [1, 3, 10, 25],
+    unit: 'upgrades'
   },
 
   // ── Category 7: Thermal ──

@@ -30,7 +30,7 @@ export const actions = {
     commit('setLastFrame', payload)
   },
 
-  async onEvent ({ commit }, payload) {
+  async onEvent ({ commit, dispatch }, payload) {
     switch (payload.action) {
       case 'newframe': {
         if (payload.status === 'error') {
@@ -55,6 +55,10 @@ export const actions = {
         }
 
         commit('setRenderStatus', payload)
+
+        if (payload.status === 'success') {
+          dispatch('achievements/onTimelapseRenderSuccess', payload as Moonraker.Timelapse.RenderSuccess, { root: true })
+        }
         break
       }
 

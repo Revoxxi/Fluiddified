@@ -31,7 +31,10 @@ export const defaultState = (): AchievementsState => {
       lastUserInteractionMs: 0,
       konamiIndex: 0,
       tempPrecisionStableSinceMs: null,
-      sawHotBedThisPrint: false
+      sawHotBedThisPrint: false,
+      timelapseRenderFingerprints: [],
+      timelapseSuccessfulRenders: 0,
+      serviceUpdatesCompleted: 0
     },
     totalPoints: 0,
     enabled: true,

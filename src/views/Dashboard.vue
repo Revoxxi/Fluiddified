@@ -19,15 +19,17 @@
             }"
             @end="handleUpdateLayout"
           >
-            <template v-for="c in container">
+            <div
+              v-for="c in container"
+              :key="`${containerIndex}-${c.id}`"
+              class="dashboard-card-wrap mb-2 mb-md-4"
+            >
               <component
                 :is="c.id"
-                v-if="inLayout || (isDashboardCardVisible(c))"
-                :key="c.id"
+                v-show="inLayout || (isDashboardCardVisible(c))"
                 :narrow="narrow"
-                class="mb-2 mb-md-4"
               />
-            </template>
+            </div>
           </app-draggable>
         </template>
       </app-observed-column>

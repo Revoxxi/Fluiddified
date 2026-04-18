@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { AchievementDefinition, AchievementProgress } from '@/types/achievement'
-import { formatAchievementDescription, getAchievementNextTarget } from '@/util/achievementDisplay'
+import { formatAchievementAnnouncement, formatAchievementDescription, getAchievementNextTarget } from '@/util/achievementDisplay'
 import { DEFAULT_CALIBRATION_GUIDE_CONFIG } from '@/util/calibrationGuideRuntime'
 
 const tieredDef: AchievementDefinition = {
@@ -27,6 +27,16 @@ const rateDef: AchievementDefinition = {
 }
 
 describe('achievementDisplay', () => {
+  it('announcement substitutes milestone just reached for tiered unlock', () => {
+    const p: AchievementProgress = { current: 10, tierReached: 2 }
+    expect(formatAchievementAnnouncement(tieredDef, p)).toBe('Complete 10 successful prints')
+  })
+
+  it('announcement prefers unlockMessage when set', () => {
+    const def = { ...tieredDef, unlockMessage: 'Nice!' }
+    expect(formatAchievementAnnouncement(def, { current: 1, tierReached: 1 })).toBe('Nice!')
+  })
+
   it('substitutes next tier for N', () => {
     const p: AchievementProgress = { current: 0, tierReached: 0 }
     expect(getAchievementNextTarget(tieredDef, p)).toBe(1)

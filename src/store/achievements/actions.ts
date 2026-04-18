@@ -16,6 +16,16 @@ import { SocketActions } from '@/api/socketActions'
 import { EventBus } from '@/eventBus'
 import { consola } from 'consola'
 import { achievementDefinitions } from '@/components/widgets/achievements/definitions'
+import {
+  countDistinctMonthsWithPrint,
+  countDistinctSeasonsWithPrint,
+  countQueueCompletedJobs,
+  deriveAchievementStatsFromHistory,
+  getDateKeyFromSeconds,
+  getWeekAnchorDateKey,
+  parseJobEndTime
+} from '@/util/achievementHistoryDerived'
+import { formatAchievementAnnouncement } from '@/util/achievementDisplay'
 import { resolveUserVisibleMacroName } from '@/store/achievements/gcodeMacros'
 import type { Role } from '@/types/auth'
 
@@ -35,18 +45,6 @@ const rarityPoints: Record<string, number> = {
   rare: 50,
   epic: 100,
   legendary: 250
-}
-
-function getDateKey (ts: number): string {
-  const d = new Date(ts * 1000)
-  return `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
-}
-
-function getWeekendKey (ts: number): string {
-  const d = new Date(ts * 1000)
-  const sun = new Date(d)
-  sun.setDate(d.getDate() - d.getDay())
-  return getDateKey(sun.getTime() / 1000)
 }
 
 function isPalindrome (s: string): boolean {
@@ -77,23 +75,8 @@ function countPrintsOnDay (jobs: Array<{ status: string, end_time?: number | str
   return jobs.filter(j =>
     j.status === 'completed' &&
     j.end_time != null &&
-    getDateKey(typeof j.end_time === 'string' ? parseFloat(j.end_time) : j.end_time) === dateKey
+    getDateKeyFromSeconds(typeof j.end_time === 'string' ? parseFloat(j.end_time) : j.end_time) === dateKey
   ).length
-}
-
-/** Monday-anchored calendar week (local), for “active week” streaks */
-function getWeekAnchorDateKey (tsSec: number): string {
-  const d = new Date(tsSec * 1000)
-  const day = d.getDay()
-  const mondayOffset = day === 0 ? -6 : 1 - day
-  const mon = new Date(d)
-  mon.setDate(mon.getDate() + mondayOffset)
-  return getDateKey(mon.getTime() / 1000)
-}
-
-function gramsFromCompletedJob (job: HistoryItem): number {
-  const w = job.metadata?.filament_weight_total
-  return typeof w === 'number' && w > 0 ? w : 0
 }
 
 /** @returns null if fewer than 50 finished jobs (completed / cancelled / error) */
@@ -227,6 +210,7 @@ export const actions = {
     const now = Date.now()
     let unlocked = false
     let newTier = progress.tierReached
+    const startTier = progress.tierReached
 
     if (def.tiers) {
       const currentTier = progress.tierReached
@@ -268,21 +252,24 @@ export const actions = {
     }
 
     if (unlocked) {
-      const points = rarityPoints[def.rarity] ?? def.points
-      commit('setTotalPoints', state.totalPoints + points)
+      const pointsPerTier = rarityPoints[def.rarity] ?? def.points
+      const tiersGained = def.tiers ? newTier - startTier : 1
+      const pointsAwarded = def.tiers ? pointsPerTier * tiersGained : pointsPerTier
+      commit('setTotalPoints', state.totalPoints + pointsAwarded)
       if (state.notificationsEnabled) {
         const tierLabel = def.tiers && def.tiers.length > 0
           ? `Tier ${newTier} / ${def.tiers.length}`
           : undefined
+        const progressForText = state.progress[payload.id]
         EventBus.$emit(undefined, {
           type: 'success',
           timeout: 8000,
           achievement: {
             id: def.id,
             name: def.name,
-            description: def.unlockMessage ?? def.description,
+            description: formatAchievementAnnouncement(def, progressForText),
             rarity: def.rarity,
-            points,
+            points: pointsAwarded,
             tierLabel,
             icon: def.icon
           }
@@ -379,6 +366,18 @@ export const actions = {
     if (!state.enabled) return
     if (!canEarnAchievements(rootGetters)) return
 
+    const jobs = rootState.history?.jobs ?? []
+    const derived = deriveAchievementStatsFromHistory(jobs)
+    commit('updateStat', { key: 'consecutiveSuccesses', value: derived.consecutiveSuccesses })
+    commit('updateStat', { key: 'totalPrintWeightGrams', value: derived.totalPrintWeightGrams })
+    commit('updateStat', { key: 'distinctDaysPrinted', value: derived.distinctDaysPrinted })
+    commit('updateStat', { key: 'weekendsPrinted', value: derived.weekendsPrinted })
+    commit('updateStat', { key: 'weeksWithPrint', value: derived.weeksWithPrint })
+    commit('updateStat', { key: 'dailyStreak', value: derived.dailyStreak })
+    commit('updateStat', { key: 'failedPrintCount', value: derived.failedPrintCount })
+    commit('updateStat', { key: 'lastPrintEndTime', value: derived.lastPrintEndTime })
+    commit('updateStat', { key: 'lastPrintDate', value: derived.lastPrintDate })
+
     const totals = rootState.history?.job_totals
     const isCompleted = job.status === 'completed'
     const isFailed = job.status === 'cancelled' || job.status === 'error'
@@ -404,16 +403,26 @@ export const actions = {
       })
     }
 
+    if (isCompleted && state.stats.totalPrintWeightGrams > 0) {
+      await dispatch('unlockAchievement', {
+        id: 'print_weight',
+        value: state.stats.totalPrintWeightGrams
+      })
+    }
+
     if (isCompleted) {
-      const grams = gramsFromCompletedJob(job)
-      if (grams > 0) {
-        const totalW = state.stats.totalPrintWeightGrams + grams
-        commit('updateStat', { key: 'totalPrintWeightGrams', value: totalW })
-        await dispatch('unlockAchievement', {
-          id: 'print_weight',
-          value: totalW
-        })
-      }
+      await dispatch('unlockAchievement', {
+        id: 'queue_completed',
+        value: countQueueCompletedJobs(jobs)
+      })
+      await dispatch('unlockAchievement', {
+        id: 'months_active',
+        value: countDistinctMonthsWithPrint(jobs)
+      })
+      await dispatch('unlockAchievement', {
+        id: 'seasons_touched',
+        value: countDistinctSeasonsWithPrint(jobs)
+      })
     }
 
     if (isCompleted) {
@@ -456,12 +465,19 @@ export const actions = {
         await dispatch('unlockAchievement', { id: 'tiny_print' })
       }
 
-      if (state.stats.lastPrintEndTime > 0 && startTime - state.stats.lastPrintEndTime < 300) {
-        await dispatch('unlockAchievement', { id: 'back_to_back' })
+      const sortedByEnd = [...jobs]
+        .filter(j => parseJobEndTime(j) > 0)
+        .sort((a, b) => parseJobEndTime(a) - parseJobEndTime(b))
+      const idx = sortedByEnd.findIndex(j => j.job_id === job.job_id)
+      if (idx > 0) {
+        const prevEnd = parseJobEndTime(sortedByEnd[idx - 1])
+        if (startTime > 0 && startTime - prevEnd < 300) {
+          await dispatch('unlockAchievement', { id: 'back_to_back' })
+        }
       }
 
-      const endDateKey = endTime > 0 ? getDateKey(endTime) : getDateKey(Date.now() / 1000)
-      const todayCount = countPrintsOnDay(rootState.history?.jobs ?? [], endDateKey) + 1
+      const endDateKey = endTime > 0 ? getDateKeyFromSeconds(endTime) : getDateKeyFromSeconds(Date.now() / 1000)
+      const todayCount = countPrintsOnDay(jobs, endDateKey)
       if (todayCount >= 3) {
         await dispatch('unlockAchievement', { id: 'triple_play' })
       }
@@ -493,15 +509,10 @@ export const actions = {
 
       const startDay = startDate.getDay()
       if (startDay === 0 || startDay === 6) {
-        const wkKey = getWeekendKey(startTime)
-        if (!state.stats.weekendsPrinted.includes(wkKey)) {
-          const updated = [...state.stats.weekendsPrinted, wkKey]
-          commit('updateStat', { key: 'weekendsPrinted', value: updated })
-          await dispatch('unlockAchievement', {
-            id: 'weekend_warrior',
-            value: updated.length
-          })
-        }
+        await dispatch('unlockAchievement', {
+          id: 'weekend_warrior',
+          value: state.stats.weekendsPrinted.length
+        })
       }
 
       if (startDate.getMonth() === 0 && startDate.getDate() === 1) {
@@ -525,54 +536,29 @@ export const actions = {
     }
 
     if (isCompleted) {
-      const newStreak = state.stats.consecutiveSuccesses + 1
-      commit('updateStat', { key: 'consecutiveSuccesses', value: newStreak })
       await dispatch('unlockAchievement', {
         id: 'consecutive_success',
-        value: newStreak
+        value: state.stats.consecutiveSuccesses
       })
 
       if (state.stats.consecutiveSuccesses === 1 && state.stats.failedPrintCount > 0) {
         await dispatch('unlockAchievement', { id: 'bounced_back' })
       }
     } else if (isFailed) {
-      commit('updateStat', { key: 'consecutiveSuccesses', value: 0 })
-      const newFails = state.stats.failedPrintCount + 1
-      commit('updateStat', { key: 'failedPrintCount', value: newFails })
-      if (newFails >= 50) {
+      if (state.stats.failedPrintCount >= 50) {
         await dispatch('unlockAchievement', { id: 'five_hundred_errors' })
       }
     }
 
-    const nowKey = getDateKey(Date.now() / 1000)
-    const lastDate = state.stats.lastPrintDate
+    await dispatch('unlockAchievement', {
+      id: 'daily_streak',
+      value: state.stats.dailyStreak
+    })
 
-    if (lastDate) {
-      const lastMs = new Date(lastDate).getTime()
-      const nowMs = new Date(nowKey).getTime()
-      const diffDays = Math.round((nowMs - lastMs) / 86400000)
-      if (diffDays === 1) {
-        const newDailyStreak = state.stats.dailyStreak + 1
-        commit('updateStat', { key: 'dailyStreak', value: newDailyStreak })
-        await dispatch('unlockAchievement', {
-          id: 'daily_streak',
-          value: newDailyStreak
-        })
-      } else if (diffDays > 1) {
-        commit('updateStat', { key: 'dailyStreak', value: 1 })
-      }
-    } else {
-      commit('updateStat', { key: 'dailyStreak', value: 1 })
-    }
-
-    if (!state.stats.distinctDaysPrinted.includes(nowKey)) {
-      const updated = [...state.stats.distinctDaysPrinted, nowKey]
-      commit('updateStat', { key: 'distinctDaysPrinted', value: updated })
-      await dispatch('unlockAchievement', {
-        id: 'days_active',
-        value: updated.length
-      })
-    }
+    await dispatch('unlockAchievement', {
+      id: 'days_active',
+      value: state.stats.distinctDaysPrinted.length
+    })
 
     if (isCompleted && totals) {
       const totalCompleted = totals.total_jobs
@@ -597,15 +583,10 @@ export const actions = {
     }
 
     if (isCompleted && endTime > 0) {
-      const wk = getWeekAnchorDateKey(endTime)
-      if (!state.stats.weeksWithPrint.includes(wk)) {
-        const wup = [...state.stats.weeksWithPrint, wk]
-        commit('updateStat', { key: 'weeksWithPrint', value: wup })
-        await dispatch('unlockAchievement', {
-          id: 'weekly_active',
-          value: wup.length
-        })
-      }
+      await dispatch('unlockAchievement', {
+        id: 'weekly_active',
+        value: state.stats.weeksWithPrint.length
+      })
     }
 
     if (isCompleted || isFailed) {
@@ -641,8 +622,6 @@ export const actions = {
 
     await dispatch('recomputeUptimeAchievement')
 
-    commit('updateStat', { key: 'lastPrintEndTime', value: endTime || Date.now() / 1000 })
-    commit('updateStat', { key: 'lastPrintDate', value: nowKey })
     await dispatch('saveToDb')
   },
 
@@ -707,6 +686,8 @@ export const actions = {
   /**
    * printer.gcode.script returned ok — Klipper accepted the script. Used for fair
    * macro / calibration / console achievement tracking (failed commands do not count).
+   * Invoked only from `console/onGcodeScript`, which runs for this tab’s RPC result (see socketClient + `__request__` guard), not for other users’ commands or passive console history.
+   * Other flows: print/history achievements use server totals; theme/shortcuts/navigation are local UI; thermal polling is this client only.
    */
   async onGcodeScriptOk ({ state, rootState, commit, dispatch, rootGetters }, script: string) {
     if (!state.enabled) return
@@ -1074,6 +1055,17 @@ export const actions = {
     const jobs = rootState.history?.jobs ?? []
     const totals = (rootState.history as any)?.job_totals
 
+    const derived = deriveAchievementStatsFromHistory(jobs)
+    commit('updateStat', { key: 'consecutiveSuccesses', value: derived.consecutiveSuccesses })
+    commit('updateStat', { key: 'totalPrintWeightGrams', value: derived.totalPrintWeightGrams })
+    commit('updateStat', { key: 'distinctDaysPrinted', value: derived.distinctDaysPrinted })
+    commit('updateStat', { key: 'weekendsPrinted', value: derived.weekendsPrinted })
+    commit('updateStat', { key: 'weeksWithPrint', value: derived.weeksWithPrint })
+    commit('updateStat', { key: 'dailyStreak', value: derived.dailyStreak })
+    commit('updateStat', { key: 'failedPrintCount', value: derived.failedPrintCount })
+    commit('updateStat', { key: 'lastPrintEndTime', value: derived.lastPrintEndTime })
+    commit('updateStat', { key: 'lastPrintDate', value: derived.lastPrintDate })
+
     const completedJobs = jobs.filter((j: any) => j.status === 'completed') as HistoryItem[]
     const totalCompleted = totals?.total_jobs ?? completedJobs.length
 
@@ -1092,24 +1084,38 @@ export const actions = {
       await dispatch('unlockAchievement', { id: 'filament_used', value: totalFilamentM })
     }
 
-    let weightSum = 0
-    const weekKeySet = new Set<string>()
-    for (const job of completedJobs) {
-      weightSum += gramsFromCompletedJob(job)
-      const et = (job as HistoryItem).end_time
-      if (et != null) {
-        const t = typeof et === 'string' ? parseFloat(et) : et
-        if (t > 0) weekKeySet.add(getWeekAnchorDateKey(t))
-      }
+    if (derived.totalPrintWeightGrams > 0) {
+      await dispatch('unlockAchievement', { id: 'print_weight', value: derived.totalPrintWeightGrams })
     }
-    if (weightSum > 0) {
-      commit('updateStat', { key: 'totalPrintWeightGrams', value: weightSum })
-      await dispatch('unlockAchievement', { id: 'print_weight', value: weightSum })
+    if (derived.weeksWithPrint.length > 0) {
+      await dispatch('unlockAchievement', { id: 'weekly_active', value: derived.weeksWithPrint.length })
     }
-    if (weekKeySet.size > 0) {
-      commit('updateStat', { key: 'weeksWithPrint', value: [...weekKeySet] })
-      await dispatch('unlockAchievement', { id: 'weekly_active', value: weekKeySet.size })
-    }
+
+    await dispatch('unlockAchievement', {
+      id: 'daily_streak',
+      value: derived.dailyStreak
+    })
+    await dispatch('unlockAchievement', {
+      id: 'days_active',
+      value: derived.distinctDaysPrinted.length
+    })
+    await dispatch('unlockAchievement', {
+      id: 'consecutive_success',
+      value: derived.consecutiveSuccesses
+    })
+
+    await dispatch('unlockAchievement', {
+      id: 'queue_completed',
+      value: countQueueCompletedJobs(jobs)
+    })
+    await dispatch('unlockAchievement', {
+      id: 'months_active',
+      value: countDistinctMonthsWithPrint(jobs)
+    })
+    await dispatch('unlockAchievement', {
+      id: 'seasons_touched',
+      value: countDistinctSeasonsWithPrint(jobs)
+    })
 
     const rateAll = computeSuccessRatePercent(jobs as Array<{ status: string }>)
     if (rateAll != null) {
@@ -1169,10 +1175,10 @@ export const actions = {
       const duration = (job as any).print_duration ?? 0
       if (duration < 60) await dispatch('unlockAchievement', { id: 'quick_job' })
       if (duration < 300) await dispatch('unlockAchievement', { id: 'speed_demon' })
-      if (duration > 14400) await dispatch('unlockAchievement', { id: 'marathon_4h' })
-      if (duration > 43200) await dispatch('unlockAchievement', { id: 'marathon_12h' })
-      if (duration > 86400) await dispatch('unlockAchievement', { id: 'marathon_24h' })
-      if (duration > 172800) await dispatch('unlockAchievement', { id: 'marathon_48h' })
+      if (duration >= 4 * 3600) await dispatch('unlockAchievement', { id: 'marathon_4h' })
+      if (duration >= 12 * 3600) await dispatch('unlockAchievement', { id: 'marathon_12h' })
+      if (duration >= 24 * 3600) await dispatch('unlockAchievement', { id: 'marathon_24h' })
+      if (duration >= 48 * 3600) await dispatch('unlockAchievement', { id: 'marathon_48h' })
 
       const filament = (job as any).filament_used ?? 0
       if (filament >= 50000) await dispatch('unlockAchievement', { id: 'big_print_50m' })
@@ -1183,8 +1189,8 @@ export const actions = {
       const startTime = (job as any).start_time ?? 0
       if (startTime > 0) {
         const startHour = new Date(startTime * 1000).getHours()
-        if (startHour >= 0 && startHour < 4) await dispatch('unlockAchievement', { id: 'night_owl' })
-        if (startHour >= 5 && startHour < 7) await dispatch('unlockAchievement', { id: 'early_bird' })
+        if (startHour >= 0 && startHour <= 3) await dispatch('unlockAchievement', { id: 'night_owl' })
+        if (startHour >= 5 && startHour <= 6) await dispatch('unlockAchievement', { id: 'early_bird' })
         if (startHour === 12) await dispatch('unlockAchievement', { id: 'lunch_break' })
       }
     }
@@ -1195,6 +1201,47 @@ export const actions = {
       `Retroactive scan complete: ${totalCompleted} prints analyzed`,
       { type: 'success', timeout: 6000 }
     )
+  },
+
+  /**
+   * Moonraker timelapse `render` event with status success (broadcast to all clients).
+   * Dedupes by filename/printfile so multiple tabs do not multiply counts.
+   */
+  async onTimelapseRenderSuccess ({ state, commit, dispatch, rootGetters }, payload: Moonraker.Timelapse.RenderSuccess) {
+    if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
+
+    const fp = `${payload.filename ?? ''}\0${payload.printfile ?? ''}`
+    if (fp === '\0' || state.stats.timelapseRenderFingerprints.includes(fp)) {
+      return
+    }
+
+    const fps = [...state.stats.timelapseRenderFingerprints, fp].slice(-400)
+    const n = state.stats.timelapseSuccessfulRenders + 1
+    commit('updateStat', { key: 'timelapseRenderFingerprints', value: fps })
+    commit('updateStat', { key: 'timelapseSuccessfulRenders', value: n })
+
+    if (n === 1) {
+      await dispatch('unlockAchievement', { id: 'timelapse_debut' })
+    }
+    await dispatch('unlockAchievement', { id: 'timelapse_producer', value: n })
+    await dispatch('saveToDb')
+  },
+
+  async onCheckedForUpdates ({ dispatch, rootGetters }) {
+    if (!canEarnAchievements(rootGetters)) return
+    await dispatch('unlockAchievement', { id: 'update_inventory' })
+    await dispatch('saveToDb')
+  },
+
+  /** After Moonraker update manager finishes upgrading a component (not “check for updates”). */
+  async onServiceUpdateApplied ({ state, commit, dispatch, rootGetters }) {
+    if (!state.enabled) return
+    if (!canEarnAchievements(rootGetters)) return
+    const n = state.stats.serviceUpdatesCompleted + 1
+    commit('updateStat', { key: 'serviceUpdatesCompleted', value: n })
+    await dispatch('unlockAchievement', { id: 'stack_upgrade', value: n })
+    await dispatch('saveToDb')
   },
 
   async resetAndSave ({ commit, dispatch, rootGetters }) {

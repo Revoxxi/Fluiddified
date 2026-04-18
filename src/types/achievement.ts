@@ -121,4 +121,10 @@ export interface AchievementStats {
   tempPrecisionStableSinceMs: number | null
   /** Bed exceeded ~80°C during current print job */
   sawHotBedThisPrint: boolean
+  /** Dedupe keys for timelapse render success (Moonraker notifies all clients). */
+  timelapseRenderFingerprints: string[]
+  /** Successful timelapse renders (deduped by fingerprint). */
+  timelapseSuccessfulRenders: number
+  /** Moonraker update manager: completed service updates (Moonraker/Klipper/system/client). */
+  serviceUpdatesCompleted: number
 }

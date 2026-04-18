@@ -58,12 +58,11 @@ export const actions = {
    * History has changed, update the data.
    */
   async onHistoryChange ({ commit, dispatch, rootState }, payload: { action: 'added' | 'finished'; job: HistoryItem }) {
-    SocketActions.serverHistoryTotals()
-
     if (payload) {
       switch (payload.action) {
         case 'added': {
           commit('setAddHistory', payload.job)
+          SocketActions.serverHistoryTotals()
 
           const { rootPath, filename } = getFilePaths(payload.job.filename, 'gcodes')
 
@@ -76,11 +75,14 @@ export const actions = {
 
           break
         }
-        case 'finished':
+        case 'finished': {
           commit('setUpdateHistory', payload.job)
-          dispatch('achievements/onPrintComplete', payload.job, { root: true })
+          // Totals must be fresh before achievements (tier values use job_totals).
+          await SocketActions.serverHistoryTotals()
+          await dispatch('achievements/onPrintComplete', payload.job, { root: true })
 
           break
+        }
       }
     }
   },

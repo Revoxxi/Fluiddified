@@ -45,15 +45,17 @@
             }"
             @end.stop="updateLayout"
           >
-            <template v-for="c in container">
+            <div
+              v-for="c in container"
+              :key="`${containerIndex}-${c.id}`"
+              class="mb-2 mb-md-4"
+            >
               <diagnostics-card
-                v-if="c.enabled || inLayout"
-                :key="c.id"
+                v-show="c.enabled || inLayout"
                 :config="c"
-                class="mb-2 mb-md-4"
                 @edit="handleEditCard"
               />
-            </template>
+            </div>
           </app-draggable>
         </v-col>
       </template>

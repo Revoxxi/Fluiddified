@@ -105,6 +105,7 @@
       </div>
 
       <app-btn
+        v-if="!(uiSessionActive && isGuest)"
         icon
         text
         @click="$emit('toolsdrawer')"

@@ -239,6 +239,7 @@ app:
       preview_3d_next_layers: Next layers
       preview_3d_travels: Travels
       preview_3d_printhead: Print head
+      preview_3d_fat_lines: Fat lines (PrettyGCode-style)
       preview_3d_zoom_in: Zoom in
       preview_3d_zoom_out: Zoom out
       preview_3d_reset_view: Reset view

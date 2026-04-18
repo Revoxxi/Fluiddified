@@ -23,7 +23,7 @@ export class WebSocketClient {
   allowedReconnectAttempts = 3
   reconnectCount = 0
   logPrefix = '[WEBSOCKET]'
-  requests: Request[] = []
+  requests: SocketRpcRequest[] = []
   requestId = 0
   store: Store<RootState>
   pingTimeout: number | null = null
@@ -267,7 +267,7 @@ export class WebSocketClient {
             jsonrpc: '2.0'
           }
 
-          const request: Request = {
+          const request: SocketRpcRequest = {
             id,
             onFulfilled: resolve,
             onRejected: reject
@@ -345,7 +345,8 @@ export interface NotifyOptions {
   wait?: string;
 }
 
-interface Request {
+/** In-flight JSON-RPC request on this WebSocket (see `emit`); attached to results as `__request__`. */
+export interface SocketRpcRequest {
   id: number;
   dispatch?: string;
   commit?: string;
@@ -356,7 +357,7 @@ interface Request {
 }
 
 export type ObjectWithRequest<T> = T & {
-  __request__: Request
+  __request__: SocketRpcRequest
 }
 
 interface SocketRequest {

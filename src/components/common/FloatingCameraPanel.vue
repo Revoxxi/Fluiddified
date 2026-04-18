@@ -219,15 +219,21 @@ export default class FloatingCameraPanel extends Mixins(StateMixin) {
   cursor: grab;
   padding: 6px 8px;
   gap: 8px;
-  background: rgba(0, 0, 0, 0.45);
   min-height: 40px;
+  /* Opaque bar — matches app surface so it does not show video through the title row */
+  background: #212121;
+  color: rgba(255, 255, 255, 0.87);
+}
+
+.theme--light .floating-camera-panel__header {
+  background: #eeeeee;
+  color: rgba(0, 0, 0, 0.87);
 }
 
 .floating-camera-panel__title {
   flex: 0 0 auto;
   font-size: 0.875rem;
   font-weight: 500;
-  opacity: 0.95;
   white-space: nowrap;
   padding-right: 4px;
 }

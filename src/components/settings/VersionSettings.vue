@@ -284,11 +284,16 @@ export default class VersionSettings extends Mixins(StateMixin) {
     }
   }
 
-  forceCheck () {
-    if (this.$typedGetters['server/getIsMinApiVersion']('1.2.0')) {
-      SocketActions.machineUpdateRefresh()
-    } else {
-      SocketActions.machineUpdateStatus(true)
+  async forceCheck () {
+    try {
+      if (this.$typedGetters['server/getIsMinApiVersion']('1.2.0')) {
+        await SocketActions.machineUpdateRefresh()
+      } else {
+        await SocketActions.machineUpdateStatus(true)
+      }
+      await this.$typedDispatch('achievements/onCheckedForUpdates', undefined, { root: true })
+    } catch {
+      /* refresh failed or achievements unavailable */
     }
   }
 

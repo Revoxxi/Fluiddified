@@ -1,4 +1,5 @@
 import type { ArcMove, Layer, Move, Point3D } from '@/store/gcodePreview/types'
+import { binarySearch } from '@/util/gcode-preview'
 
 function distance (a: { x: number; y: number }, b: { x: number; y: number }): number {
   const dx = Math.abs(a.x - b.x)
@@ -77,6 +78,131 @@ function sampleArcSegment (
   return out
 }
 
+/** Same defaults as OctoPrint PrettyGCode (Marlin arc interpolation). */
+export const PRETTY_GCODE_ARC = {
+  mmPerArcSegment: 1.0,
+  minArcSegments: 20,
+  minMmPerArcSegment: 0.1,
+  nArcCorrection: 24
+} as const
+
+/**
+ * Marlin-style arc interpolation (PrettyGCode / MarlinFirmware).
+ * Matches firmware segment length instead of uniform angle steps.
+ */
+export function interpolateArcPrettyGCode (
+  from: Point3D,
+  eFrom: number,
+  move: ArcMove
+): Point3D[] {
+  const dest = {
+    x: move.x ?? from.x,
+    y: move.y ?? from.y,
+    z: move.z ?? from.z
+  }
+  const eTo = move.e !== undefined ? move.e : eFrom
+
+  if (move.i === undefined && move.j === undefined) {
+    return sampleArcSegment(from, move, 24)
+  }
+
+  const ii = move.i ?? 0
+  const jj = move.j ?? 0
+  const radius = Math.hypot(ii, jj)
+  if (radius < 1e-6) {
+    return [from, dest]
+  }
+
+  const { mmPerArcSegment, minArcSegments, minMmPerArcSegment, nArcCorrection } = PRETTY_GCODE_ARC
+
+  const current = { x: from.x, y: from.y, z: from.z, e: eFrom }
+  const arc = {
+    x: dest.x,
+    y: dest.y,
+    z: dest.z,
+    e: eTo,
+    i: ii,
+    j: jj,
+    is_clockwise: move.d === 'clockwise'
+  }
+
+  let vRadiusX = -1.0 * arc.i
+  let vRadiusY = -1.0 * arc.j
+  const centerX = current.x - vRadiusX
+  const centerY = current.y - vRadiusY
+  const travelZ = arc.z - current.z
+  const travelE = arc.e - current.e
+  const vRadiusTargetX = arc.x - centerX
+  const vRadiusTargetY = arc.y - centerY
+
+  let angularTravelTotal = Math.atan2(
+    vRadiusX * vRadiusTargetY - vRadiusY * vRadiusTargetX,
+    vRadiusX * vRadiusTargetX + vRadiusY * vRadiusTargetY
+  )
+  if (angularTravelTotal < 0) angularTravelTotal += 2.0 * Math.PI
+
+  let mmPerSeg: number = mmPerArcSegment
+  if (minArcSegments > 0) {
+    mmPerSeg = radius * ((2.0 * Math.PI) / minArcSegments)
+  }
+  if (minMmPerArcSegment > 0 && mmPerSeg < minMmPerArcSegment) {
+    mmPerSeg = minMmPerArcSegment
+  }
+  if (mmPerSeg > mmPerArcSegment) {
+    mmPerSeg = mmPerArcSegment
+  }
+
+  if (arc.is_clockwise) {
+    angularTravelTotal -= 2.0 * Math.PI
+  }
+
+  if (current.x === arc.x && current.y === arc.y && angularTravelTotal === 0) {
+    angularTravelTotal += 2.0 * Math.PI
+  }
+
+  const mmOfTravelArc = Math.hypot(angularTravelTotal * radius, Math.abs(travelZ))
+  const numSegments = Math.max(1, Math.ceil(mmOfTravelArc / mmPerSeg))
+
+  const xySegmentTheta = angularTravelTotal / numSegments
+  const zSegmentTheta = travelZ / numSegments
+  const eSegmentTheta = travelE / numSegments
+
+  const out: Point3D[] = [{ x: from.x, y: from.y, z: from.z }]
+
+  if (numSegments > 1) {
+    const cosT = Math.cos(xySegmentTheta)
+    const sinT = Math.sin(xySegmentTheta)
+    let count = 0
+    for (let i = 1; i < numSegments; i++) {
+      if (count < nArcCorrection) {
+        const rAxisi = vRadiusX * sinT + vRadiusY * cosT
+        vRadiusX = vRadiusX * cosT - vRadiusY * sinT
+        vRadiusY = rAxisi
+        count++
+      } else {
+        const sinTi = Math.sin(i * xySegmentTheta)
+        const cosTi = Math.cos(i * xySegmentTheta)
+        vRadiusX = (-1.0 * arc.i) * cosTi + arc.j * sinTi
+        vRadiusY = (-1.0 * arc.i) * sinTi - arc.j * cosTi
+        count = 0
+      }
+      const line = {
+        x: centerX + vRadiusX,
+        y: centerY + vRadiusY,
+        z: current.z + zSegmentTheta,
+        e: current.e + eSegmentTheta
+      }
+      out.push({ x: line.x, y: line.y, z: line.z })
+      current.x = line.x
+      current.y = line.y
+      current.z = line.z
+      current.e = line.e
+    }
+  }
+  out.push({ x: arc.x, y: arc.y, z: arc.z })
+  return out
+}
+
 function applyMovePosition (toolhead: Point3D, move: Move): void {
   if (isArcMove(move)) {
     const dest = sampleArcSegment(toolhead, move, 16)
@@ -89,13 +215,6 @@ function applyMovePosition (toolhead: Point3D, move: Move): void {
   if (move.x !== undefined) toolhead.x = move.x
   if (move.y !== undefined) toolhead.y = move.y
   if (move.z !== undefined) toolhead.z = move.z
-}
-
-function arcSampleCountForMoveCount (moveCount: number): number {
-  if (moveCount > 300_000) return 4
-  if (moveCount > 120_000) return 8
-  if (moveCount > 50_000) return 12
-  return 16
 }
 
 function recomputeMoveSegmentStart (segments: Segment3D[], numMoves: number): number[] {
@@ -226,18 +345,19 @@ export async function buildGcodeSegments3dAsync (
     return { segments: [], moveSegmentStart: [0] }
   }
 
-  const arcSamples = arcSampleCountForMoveCount(moves.length)
   const chunkMoves = options?.chunkMoves ?? 4000
   const shouldCancel = options?.shouldCancel
 
   await new Promise<void>(resolve => requestAnimationFrame(() => resolve()))
 
   const toolhead: Point3D = { x: 0, y: 0, z: 0 }
+  let toolheadE = 0
   for (let i = 0; i < Math.min(3, moves.length); i++) {
     const m = moves[i]
     if (m.x !== undefined) toolhead.x = m.x
     if (m.y !== undefined) toolhead.y = m.y
     if (m.z !== undefined) toolhead.z = m.z
+    if (m.e !== undefined) toolheadE = m.e
   }
 
   const segments: Segment3D[] = []
@@ -249,9 +369,10 @@ export async function buildGcodeSegments3dAsync (
     if (isArcMove(move)) {
       let arcPts: Point3D[]
       try {
-        arcPts = sampleArcSegment(from, move, arcSamples)
+        arcPts = interpolateArcPrettyGCode(from, toolheadE, move)
       } catch {
         applyMovePosition(toolhead, move)
+        if (move.e !== undefined) toolheadE = move.e
         return
       }
       for (let a = 1; a < arcPts.length; a++) {
@@ -273,6 +394,7 @@ export async function buildGcodeSegments3dAsync (
       toolhead.x = arcPts[arcPts.length - 1].x
       toolhead.y = arcPts[arcPts.length - 1].y
       toolhead.z = arcPts[arcPts.length - 1].z
+      if (move.e !== undefined) toolheadE = move.e
       return
     }
 
@@ -299,6 +421,7 @@ export async function buildGcodeSegments3dAsync (
     toolhead.x = next.x
     toolhead.y = next.y
     toolhead.z = next.z
+    if (move.e !== undefined) toolheadE = move.e
   }
 
   let index = 0
@@ -339,4 +462,123 @@ export function getLayerIndexForMove (moveIndex: number, layers: readonly Layer[
     else hi = mid - 1
   }
   return lo
+}
+
+function interpolateToolheadFromMovesOnly (
+  moves: readonly Move[],
+  idx: number,
+  nextIdx: number,
+  t: number
+): Point3D {
+  const start = moves[idx]
+  const x0 = start.x ?? 0
+  const y0 = start.y ?? 0
+  const z0 = start.z ?? 0
+  if (nextIdx === idx) {
+    return { x: x0, y: y0, z: z0 }
+  }
+  const end = moves[nextIdx]
+  const x1 = end.x ?? x0
+  const y1 = end.y ?? y0
+  const z1 = end.z ?? z0
+  return {
+    x: x0 + (x1 - x0) * t,
+    y: y0 + (y1 - y0) * t,
+    z: z0 + (z1 - z0) * t
+  }
+}
+
+/**
+ * Toolhead position for `virtual_sdcard.file_position`, aligned with 3D segment geometry
+ * (linear + arc polylines). Maps file byte progress between moves, then distance along
+ * the decoded path within the active move.
+ */
+export function toolheadAtFilePosition (
+  moves: readonly Move[],
+  segments: readonly Segment3D[],
+  moveSegmentStart: readonly number[],
+  filePosition: number,
+  fileSizeHint?: number | null
+): Point3D {
+  if (moves.length === 0) {
+    return { x: 0, y: 0, z: 0 }
+  }
+  if (filePosition <= 0) {
+    const m0 = moves[0]
+    return {
+      x: m0.x ?? 0,
+      y: m0.y ?? 0,
+      z: m0.z ?? 0
+    }
+  }
+
+  let idx = binarySearch(moves, m => filePosition - m.filePosition, true)
+  if (idx < 0) idx = 0
+  idx = Math.max(0, Math.min(idx, moves.length - 1))
+
+  const fp0 = moves[idx].filePosition
+  const nextIdx = Math.min(idx + 1, moves.length - 1)
+  const fp1 = moves[nextIdx].filePosition
+
+  let t = 0
+  if (nextIdx !== idx && fp1 > fp0) {
+    t = (filePosition - fp0) / (fp1 - fp0)
+  } else if (idx === moves.length - 1) {
+    const endHint = fileSizeHint != null && fileSizeHint > fp0 ? fileSizeHint : fp0 + 1
+    const span = endHint - fp0
+    t = span > 0 ? Math.min(1, Math.max(0, (filePosition - fp0) / span)) : 1
+  } else {
+    t = filePosition >= fp0 ? 1 : 0
+  }
+  t = Math.max(0, Math.min(1, t))
+
+  if (!segments.length || moveSegmentStart.length !== moves.length + 1) {
+    return interpolateToolheadFromMovesOnly(moves, idx, nextIdx, t)
+  }
+
+  const s0 = moveSegmentStart[idx]
+  const s1 = moveSegmentStart[idx + 1]
+
+  if (s1 <= s0) {
+    return interpolateToolheadFromMovesOnly(moves, idx, nextIdx, t)
+  }
+
+  const points: Point3D[] = []
+  points.push({ x: segments[s0].x0, y: segments[s0].y0, z: segments[s0].z0 })
+  for (let i = s0; i < s1; i++) {
+    points.push({ x: segments[i].x1, y: segments[i].y1, z: segments[i].z1 })
+  }
+
+  if (points.length < 2) {
+    return points[0] ?? { x: 0, y: 0, z: 0 }
+  }
+
+  const lengths: number[] = [0]
+  let total = 0
+  for (let i = 0; i < points.length - 1; i++) {
+    const dx = points[i + 1].x - points[i].x
+    const dy = points[i + 1].y - points[i].y
+    const dz = points[i + 1].z - points[i].z
+    total += Math.sqrt(dx * dx + dy * dy + dz * dz)
+    lengths.push(total)
+  }
+  if (total < 1e-9) {
+    return points[0]
+  }
+
+  const target = t * total
+  for (let i = 0; i < lengths.length - 1; i++) {
+    if (target <= lengths[i + 1] + 1e-9) {
+      const segLen = lengths[i + 1] - lengths[i]
+      const segT = segLen > 1e-9 ? (target - lengths[i]) / segLen : 0
+      const a = points[i]
+      const b = points[i + 1]
+      return {
+        x: a.x + (b.x - a.x) * segT,
+        y: a.y + (b.y - a.y) * segT,
+        z: a.z + (b.z - a.z) * segT
+      }
+    }
+  }
+  return points[points.length - 1]
 }

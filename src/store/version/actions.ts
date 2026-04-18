@@ -50,35 +50,49 @@ export const actions = {
   /**
    * Notifications of specific updates
    */
-  async onUpdatedMoonraker ({ commit }, payload) {
+  async onUpdatedMoonraker ({ commit, dispatch }, payload) {
     consola.debug('Finished updating moonraker', payload)
     SocketActions.machineUpdateStatus()
     // We do this because moonraker is expected to restart.
     commit('socket/setSocketDisconnecting', true, { root: true })
+    dispatch('achievements/onServiceUpdateApplied', undefined, { root: true }).catch(() => undefined)
   },
 
-  async onUpdatedKlipper (_, payload) {
+  async onUpdatedKlipper ({ dispatch }, payload) {
     consola.debug('Finished updating klipper', payload)
     SocketActions.machineUpdateStatus()
+    dispatch('achievements/onServiceUpdateApplied', undefined, { root: true }).catch(() => undefined)
   },
 
-  async onUpdatedClient (_, payload) {
+  async onUpdatedClient ({ dispatch }, payload) {
     consola.debug('Finished updating a client', payload)
     SocketActions.machineUpdateStatus()
+    dispatch('achievements/onServiceUpdateApplied', undefined, { root: true }).catch(() => undefined)
   },
 
-  async onUpdatedFluidd (_, payload) {
+  async onUpdatedFluidd ({ dispatch }, payload) {
     consola.debug('Finished updating fluidd, reloading', payload)
+    try {
+      await dispatch('achievements/onServiceUpdateApplied', undefined, { root: true })
+    } catch {
+      /* achievements may be disabled */
+    }
     window.location.reload()
   },
 
-  async onUpdatedSystem (_, payload) {
+  async onUpdatedSystem ({ dispatch }, payload) {
     consola.debug('Finished updating system', payload)
     SocketActions.machineUpdateStatus()
+    dispatch('achievements/onServiceUpdateApplied', undefined, { root: true }).catch(() => undefined)
   },
 
-  async onUpdatedAll (_, payload) {
+  async onUpdatedAll ({ dispatch }, payload) {
     consola.debug('Finished updating all services', payload)
+    try {
+      await dispatch('achievements/onServiceUpdateApplied', undefined, { root: true })
+    } catch {
+      /* achievements may be disabled */
+    }
     window.location.reload()
   }
 } satisfies ActionTree<VersionState, RootState>

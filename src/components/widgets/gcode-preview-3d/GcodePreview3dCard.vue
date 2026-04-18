@@ -166,6 +166,18 @@
                 :label="$t('app.gcode.label.preview_3d_printhead')"
               />
             </v-col>
+            <v-col
+              cols="12"
+              sm="6"
+            >
+              <v-switch
+                v-model="preview3dFatLines"
+                hide-details
+                dense
+                :disabled="!fileLoaded"
+                :label="$t('app.gcode.label.preview_3d_fat_lines')"
+              />
+            </v-col>
           </v-row>
           <v-row>
             <v-col>
@@ -207,6 +219,8 @@
           :show-next-layers="preview3dShowNextLayers"
           :show-travels="preview3dShowTravels"
           :show-printhead="preview3dShowPrinthead"
+          :fat-lines="preview3dFatLines"
+          :clip-current-layer-to-progress="!followProgress"
         />
       </div>
 
@@ -256,6 +270,8 @@ export default class GcodePreview3dCard extends Mixins(StateMixin, FilesMixin, B
   preview3dShowNextLayers = false
   preview3dShowTravels = false
   preview3dShowPrinthead = true
+  /** PrettyGCode-style wide lines (`LineMaterial`). Off = fast 1px lines. */
+  preview3dFatLines = true
 
   /** Smooth nozzle from Klipper motion_report when following the active job. */
   get useLiveMcu (): boolean {

@@ -3,6 +3,7 @@ import { Globals } from '@/globals'
 import type { ConsoleEntry, ConsoleFilter, ConsoleState, PromptDialogButton, PromptDialogItemButton, PromptDialogItemText } from './types'
 import type { RootState } from '../types'
 import { SocketActions } from '@/api/socketActions'
+import type { SocketRpcRequest } from '@/plugins/socketClient'
 import DOMPurify from 'dompurify'
 import { takeRightWhile } from 'lodash-es'
 
@@ -31,10 +32,16 @@ export const actions = {
 
   /**
    * The result of a specific gcode request.
+   * Only achievements for commands issued via *this* browser connection: `__request__` is set
+   * by the socket client for responses that match an in-flight RPC from this tab (not other users/tabs).
    */
-  async onGcodeScript ({ dispatch }, payload: { result?: string, __request__?: { params?: { script?: string } } }) {
+  async onGcodeScript ({ dispatch }, payload: { result?: string, __request__?: SocketRpcRequest }) {
     if (payload?.result === 'ok') {
-      const script = payload.__request__?.params?.script
+      const req = payload.__request__
+      if (req == null) {
+        return
+      }
+      const script = req.params?.script
       if (typeof script === 'string' && script.trim().length > 0) {
         dispatch('achievements/onGcodeScriptOk', script, { root: true })
       }
