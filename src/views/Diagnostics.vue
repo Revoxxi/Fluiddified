@@ -49,6 +49,7 @@
               v-for="c in container"
               :key="`${containerIndex}-${c.id}`"
               class="mb-2 mb-md-4"
+              :data-id="c.id"
             >
               <diagnostics-card
                 v-show="c.enabled || inLayout"

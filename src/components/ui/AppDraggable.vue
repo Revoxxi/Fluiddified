@@ -51,9 +51,75 @@ export default class AppDraggable extends Vue {
     this.$emit('start', event)
   }
 
+  private static itemId (item: unknown): string | null {
+    if (item && typeof item === 'object' && 'id' in item && typeof (item as { id: string }).id === 'string') {
+      return (item as { id: string }).id
+    }
+    return null
+  }
+
+  private static buildIdMap (lists: unknown[][]): Map<string, unknown> {
+    const map = new Map<string, unknown>()
+    for (const list of lists) {
+      for (const item of list) {
+        const id = AppDraggable.itemId(item)
+        if (id) map.set(id, item)
+      }
+    }
+    return map
+  }
+
+  /**
+   * Prefer DOM order + data-id on each draggable child — matches Sortable’s real order and
+   * avoids bad oldIndex/newIndex when Vue’s list length and the DOM disagree.
+   */
+  private static orderListFromDomEl (root: HTMLElement, idAttr: string, idMap: Map<string, unknown>): unknown[] {
+    const ordered: unknown[] = []
+    for (let i = 0; i < root.children.length; i++) {
+      const child = root.children[i]
+      if (!(child instanceof HTMLElement)) continue
+      const id = child.getAttribute(idAttr)
+      if (!id) continue
+      const item = idMap.get(id)
+      if (item !== undefined) ordered.push(item)
+    }
+    return ordered
+  }
+
+  private static syncSortableEndByIndex (
+    event: Sortable.SortableEvent,
+    fromInst: AppDraggable,
+    toInst: AppDraggable
+  ): void {
+    const oldIndex = event.oldIndex
+    const newIndex = event.newIndex
+    if (oldIndex == null || newIndex == null) return
+
+    if (fromInst === toInst) {
+      if (oldIndex === newIndex) return
+      const list = fromInst.items as unknown[]
+      if (oldIndex < 0 || oldIndex >= list.length) return
+      const [moved] = list.splice(oldIndex, 1)
+      if (moved === undefined) return
+      const insertAt = Math.max(0, Math.min(newIndex, list.length))
+      list.splice(insertAt, 0, moved)
+      fromInst.$emit('input', list)
+    } else {
+      const fromList = fromInst.items as unknown[]
+      const toList = toInst.items as unknown[]
+      if (oldIndex < 0 || oldIndex >= fromList.length) return
+      const [moved] = fromList.splice(oldIndex, 1)
+      if (moved === undefined) return
+      const insertAt = Math.max(0, Math.min(newIndex, toList.length))
+      toList.splice(insertAt, 0, moved)
+      fromInst.$emit('input', fromList)
+      toInst.$emit('input', toList)
+    }
+  }
+
   /**
    * Sortable may fire add/remove/update in an order that races with Vue's patch when we
-   * replace arrays with spread. Sync model once on `onEnd` with in-place splices only.
+   * replace arrays with spread. Sync model once on `onEnd` using DOM order when possible.
    */
   private static syncSortableEnd (event: Sortable.SortableEvent): void {
     const marked = event as Sortable.SortableEvent & { _fluiddSynced?: boolean }
@@ -66,23 +132,42 @@ export default class AppDraggable extends Vue {
     const toInst = to[instanceKey]
     if (!fromInst || !toInst) return
 
-    const oldIndex = event.oldIndex
-    const newIndex = event.newIndex
-    if (oldIndex == null || newIndex == null) return
+    const fromList = fromInst.items as unknown[]
+    const toList = toInst.items as unknown[]
+    const idAttr = fromInst.sortable?.options.dataIdAttr ?? 'data-id'
 
+    const map = fromInst === toInst
+      ? AppDraggable.buildIdMap([fromList])
+      : AppDraggable.buildIdMap([fromList, toList])
+
+    const newFrom = AppDraggable.orderListFromDomEl(from, idAttr, map)
+    const newTo = fromInst === toInst ? newFrom : AppDraggable.orderListFromDomEl(to, idAttr, map)
+
+    let domOk = false
     if (fromInst === toInst) {
-      if (oldIndex === newIndex) return
-      const list = fromInst.items as unknown[]
-      const [moved] = list.splice(oldIndex, 1)
-      list.splice(newIndex, 0, moved)
-      fromInst.$emit('input', list)
+      domOk =
+        newFrom.length === fromList.length &&
+        newFrom.length === from.children.length
     } else {
-      const fromList = fromInst.items as unknown[]
-      const toList = toInst.items as unknown[]
-      const [moved] = fromList.splice(oldIndex, 1)
-      toList.splice(newIndex, 0, moved)
-      fromInst.$emit('input', fromList)
-      toInst.$emit('input', toList)
+      const total = fromList.length + toList.length
+      domOk =
+        newFrom.length + newTo.length === total &&
+        newFrom.length === from.children.length &&
+        newTo.length === to.children.length
+    }
+
+    if (domOk) {
+      if (fromInst === toInst) {
+        fromList.splice(0, fromList.length, ...newFrom)
+        fromInst.$emit('input', fromList)
+      } else {
+        fromList.splice(0, fromList.length, ...newFrom)
+        toList.splice(0, toList.length, ...newTo)
+        fromInst.$emit('input', fromList)
+        toInst.$emit('input', toList)
+      }
+    } else {
+      AppDraggable.syncSortableEndByIndex(event, fromInst, toInst)
     }
 
     toInst.$emit('end', event)

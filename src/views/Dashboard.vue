@@ -23,6 +23,7 @@
               v-for="c in container"
               :key="`${containerIndex}-${c.id}`"
               class="dashboard-card-wrap mb-2 mb-md-4"
+              :data-id="c.id"
             >
               <component
                 :is="c.id"

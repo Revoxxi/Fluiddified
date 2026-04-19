@@ -80,7 +80,8 @@ function sampleArcSegment (
 
 /** Same defaults as OctoPrint PrettyGCode (Marlin arc interpolation). */
 export const PRETTY_GCODE_ARC = {
-  mmPerArcSegment: 1.0,
+  /** Slightly coarser than firmware (1mm) keeps preview segment counts and build time reasonable. */
+  mmPerArcSegment: 2.0,
   minArcSegments: 20,
   minMmPerArcSegment: 0.1,
   nArcCorrection: 24
@@ -229,6 +230,23 @@ function recomputeMoveSegmentStart (segments: Segment3D[], numMoves: number): nu
 }
 
 /**
+ * Cap segment count while sampling across the **entire** list. Plain `array.length = max` only
+ * keeps early segments (low moves / first layers) and makes higher layers disappear.
+ */
+function thinSegmentsUniform (segments: Segment3D[], maxCount: number): Segment3D[] {
+  const n = segments.length
+  if (n <= maxCount) return segments
+  if (maxCount <= 0) return []
+  if (maxCount === 1) return [segments[Math.floor((n - 1) / 2)]]
+  const out: Segment3D[] = []
+  for (let k = 0; k < maxCount; k++) {
+    const idx = Math.floor((k * (n - 1)) / (maxCount - 1))
+    out.push(segments[idx])
+  }
+  return out
+}
+
+/**
  * Reduces segment count without the "noise cloud" caused by picking every Nth segment globally
  * (that breaks continuity and scatters short edges across the whole bbox).
  * Chains are split on spatial jumps (travels). Each chain is vertex-decimated into longer edges.
@@ -309,12 +327,10 @@ function decimateSegmentChains (segments: Segment3D[], numMoves: number): { segm
     }
   }
 
-  if (out.length > MAX_DISPLAY_SEGMENTS) {
-    out.length = MAX_DISPLAY_SEGMENTS
-  }
+  const capped = thinSegmentsUniform(out, MAX_DISPLAY_SEGMENTS)
   return {
-    segments: out,
-    moveSegmentStart: recomputeMoveSegmentStart(out, numMoves)
+    segments: capped,
+    moveSegmentStart: recomputeMoveSegmentStart(capped, numMoves)
   }
 }
 

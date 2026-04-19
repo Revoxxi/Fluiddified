@@ -1,6 +1,6 @@
 import Vue from 'vue'
 import type { MutationTree } from 'vuex'
-import { getDefaultLayoutStateForInit } from './mergePluginLayout'
+import { getDefaultLayoutStateForInit, sanitizeLayoutContainerValue } from './mergePluginLayout'
 import type { LayoutConfig, LayoutState, LayoutContainer } from './types'
 import type { DiagnosticsCardContainer } from '../diagnostics/types'
 
@@ -40,7 +40,7 @@ export const mutations = {
       for (const [containerKey, components] of Object.entries(currentLayout)) {
         currentLayout[containerKey] = Array.isArray(components)
           ? components
-            .filter(card => card != null)
+            .filter(card => card != null && typeof card === 'object' && typeof card.id === 'string')
           : []
       }
 
@@ -81,7 +81,7 @@ export const mutations = {
   },
 
   setLayoutChange (state, payload: { name: string; value: LayoutContainer }) {
-    Vue.set(state.layouts, payload.name, payload.value)
+    Vue.set(state.layouts, payload.name, sanitizeLayoutContainerValue(payload.value))
   },
 
   /**

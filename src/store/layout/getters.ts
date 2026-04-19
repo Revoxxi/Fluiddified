@@ -14,7 +14,7 @@ export const getters = {
     for (const key in state.layouts[name]) {
       if (config) break
       const layout = state.layouts[name][key]
-      config = layout.find(o => o.id === id)
+      config = layout.find(o => o?.id === id)
     }
     return config
   },
@@ -34,7 +34,7 @@ export const getters = {
   isEnabledInLayout: (state, getters) => (layout: string, id: string): boolean => {
     const configs = Object.values(getters.getLayout(layout) ?? {}).flat() as LayoutConfig[]
 
-    return configs.find(configs => configs.id === id)?.enabled ?? false
+    return configs.find(c => c?.id === id)?.enabled ?? false
   },
 
   isEnabledInCurrentLayout: (state, getters) => (id: string): boolean => {
@@ -60,7 +60,7 @@ export const getters = {
 
     if (containers) {
       for (const l in containers) {
-        const config = containers[l].find(layout => layout.id === id)
+        const config = containers[l].find(layout => layout?.id === id)
         if (config) return { ...config }
       }
     }
